@@ -1,0 +1,110 @@
+---
+services:
+  openresty:
+    image: honeok/openresty:1.31.3.1-alpine-edge
+    container_name: openresty
+    restart: unless-stopped
+    # environment:
+    #   TZ: Asia/Shanghai
+    volumes:
+      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
+      - $PWD/nginx/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf
+      - $PWD/nginx/conf.d:/etc/nginx/conf.d
+      - $PWD/nginx/lua:/etc/nginx/lua
+      - $PWD/nginx/certs:/etc/nginx/certs
+      - $PWD/nginx/html:/usr/local/openresty/nginx/html
+      - $PWD/nginx/logs:/usr/local/openresty/nginx/logs
+      - php-socket:/run/php
+    tmpfs:
+      - /var/cache/openresty:rw,noexec,nosuid,size=1024m
+    healthcheck:
+      test: ["CMD", "nc", "-z", "-w", "2", "127.0.0.1", "80"]
+      interval: 30s # 每隔约 30 秒执行一次健康检查
+      timeout: 3s # 每次健康检查最多允许运行 3 秒
+      retries: 3
+      start_period: 10s # 容器刚启动后的前 10 秒属于启动宽限期
+    network_mode: host
+
+  mysql:
+    image: percona/percona-server:8.4.10-10.1
+    container_name: mysql
+    restart: unless-stopped
+    user: 1001:1001
+    environment:
+      # TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: 8aDdVzUzXwjEAOhifFW6yg # openssl rand -base64 16
+      MYSQL_USER: honeok
+      MYSQL_PASSWORD: 4siz2vOewdLbww # openssl rand -base64 10
+    volumes:
+      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
+      - $PWD/mysql/my.cnf:/etc/my.cnf
+      - $PWD/mysql/my.cnf.d:/etc/my.cnf.d
+      - $PWD/mysql/data:/var/lib/mysql
+      - $PWD/mysql/logs:/var/log/mysql
+    healthcheck:
+      test: ["CMD-SHELL", 'mysqladmin ping -h 127.0.0.1 -uroot -p"$$MYSQL_ROOT_PASSWORD" --silent']
+      interval: 10s # 每隔约 10 秒执行一次健康检查
+      timeout: 10s # 每次健康检查最多允许运行 10 秒
+      retries: 3
+      start_period: 10s # 容器刚启动后的前 10 秒属于启动宽限期
+    networks: ["web"]
+
+  php:
+    image: honeok/php:8.5.6-fpm-alpine
+    container_name: php
+    restart: unless-stopped
+    # environment:
+    #   TZ: Asia/Shanghai
+    volumes:
+      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
+      - $PWD/nginx/html:/var/www/html
+      - php-socket:/run/php
+    networks: ["web"]
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@stream_socket_client('unix:///run/php/php-fpm.sock') ? 0 : 1);"]
+      interval: 30s # 每隔约 30 秒执行一次健康检查
+      timeout: 3s # 每次健康检查最多允许运行 3 秒
+      retries: 3
+      start_period: 10s # 容器刚启动后的前 10 秒属于启动宽限期
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    # https://redis.io/docs/latest/operate/oss_and_stack/management/admin
+    # Set the Linux kernel overcommit memory setting to 1. Add vm.overcommit_memory = 1 to /etc/sysctl.conf
+    image: ghcr.io/valkey-io/valkey:9.1.1-alpine
+    container_name: redis
+    restart: unless-stopped
+    user: 999:999
+    # ports:
+    #   - 127.0.0.1:6379:6379
+    # environment:
+    #   TZ: Asia/Shanghai
+    volumes:
+      - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
+      # https://hub.docker.com/layers/percona/valkey/9-hardened/images/sha256-2bb7ba14386ee3c843870fd5d128c5b4033502235feb5bf0c17e6cb44abf8799
+      - $PWD/redis/valkey.conf:/etc/valkey/valkey.conf
+      - $PWD/redis/data:/data
+    command: ["valkey-server", "/etc/valkey/valkey.conf"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "-h", "127.0.0.1", "-p", "6379", "ping"]
+      interval: 10s # 每隔约 10 秒执行一次健康检查
+      timeout: 3s # 每次健康检查最多允许运行 3 秒
+      retries: 3
+      start_period: 5s # 容器刚启动后的前 5 秒属于启动宽限期
+    networks: ["web"]
+
+volumes:
+  php-socket:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=64m
+
+networks:
+  web:
+    driver: bridge

@@ -1,0 +1,99 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025-2026 honeok <i@honeok.com>
+
+[mysql]
+default-character-set=utf8mb4
+
+[client]
+default-character-set=utf8mb4
+# socket=/var/run/mysqld/mysqld.sock
+
+[mysqld]
+## 网络与连接设置
+port=3306
+host_cache_size=0         # 禁用主机缓存
+skip-name-resolve         # 禁用DNS反向解析 消除连接时DNS查询延迟 提升连接握手速度
+
+# https://dev.mysql.com/doc/refman/8.4/en/server-system-variables.html
+# 服务器在关闭一个交互式连接之前 等待该连接保持活动的秒数
+interactive_timeout=3600
+
+# 关闭一个非交互式连接之前 等待该连接保持活动的秒数
+wait_timeout=20
+
+# https://dev.mysql.com/doc/refman/8.4/en/packet-too-large.html
+# 服务器可以接收或发送的单个通信数据包的最大大小
+max_allowed_packet=64M    # 服务器的默认值max_allowed_packet值为64MB
+
+# https://www.percona.com/blog/dealing-with-too-many-connections-error-in-mysql-8
+# 服务器允许的最大并发客户端连接数 默认值151
+# 一旦服务器上的活动连接数达到了这个值将拒绝所有新的连接请求 并返回"ERROR 1040 (08004): Too many connections"错误
+max_connections=50        # 根据PHP-FPM的pm.max_children设定
+
+# 连接握手超时 主要用于防范"慢连接"攻击 默认值10
+connect_timeout=10
+
+# 阻止暴力破解攻击 定义服务器在暂时"拉黑"一个特定主机之前 允许该主机连续连接失败的最大次数 默认值100
+max_connect_errors=100
+
+# 网络读取超时时间 允许稍慢的查询完成数据传输 默认值30
+net_read_timeout=30
+
+## 基础与安全设置
+default-storage-engine=INNODB # 默认存储引擎
+character-set-server=utf8mb4  # 服务端默认字符集
+# collation-server=utf8mb4_general_ci
+# default-authentication-plugin=mysql_native_password # 默认身份验证插件
+sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION # SQL模式设置
+
+## InnoDB核心引擎
+# https://dev.mysql.com/doc/refman/8.4/en/innodb-init-startup-configuration.html
+# InnoDB用于缓存表数据和索引的内存区域大小 默认值128MB
+# 通常建议innodb_buffer_pool_size配置为占用系统内存的50%至75%
+innodb_buffer_pool_size=768M
+
+# InnoDB存储引擎用于在内存中暂存重做日志(Redo Log)的缓冲区大小 默认值64MB
+innodb_log_buffer_size=64M    # InnoDB日志缓冲区大小 减少大事务的I/O次数
+
+# https://dev.mysql.com/doc/refman/8.4/en/innodb-parameters.html
+# InnoDB在磁盘上用于重做日志(Redo Log)的总空间大小 默认值100MB
+innodb_redo_log_capacity=512M
+
+# 绕过OS Page Cache避免InnoDB Pool和OS Cache双重缓存 节省内存 默认值O_DIRECT
+# O_DIRECT或4: InnoDB使用O_DIRECT打开数据文件 并使用fsync()刷新 数据文件和日志文件
+innodb_flush_method=O_DIRECT
+
+# 降低小内存池的I/O抖动 默认1024
+innodb_lru_scan_depth=256
+
+# InnoDB自动NUMA内存交错策略
+innodb_numa_interleave=0 # 关闭
+
+## 路径与文件
+# datadir=/var/lib/mysql               # MySQL存储所有数据文件的根目录 包括数据库 表 索引 以及二进制日志文件
+# socket=/var/lib/mysql/mysql.sock     # MySQL服务器为本地客户端连接创建的Unix套接字文件的路径
+# log-error=/var/log/mysql/error.log
+# pid-file=/var/run/mysqld/mysqld.pid
+
+## 日志
+secure_log_path=/var/log/mysql     # 安全日志路径
+log_bin=/var/log/mysql/binlog      # 开启二进制日志功能
+sync_binlog=1                      # 强制要求MySQL在每次提交事务后 都必须将二进制日志事件同步刷写到磁盘上
+max_binlog_size=512M               # 单个binlog文件最大值
+binlog_expire_logs_seconds=604800  # binlog过期时间7天
+
+## 慢查询日志
+slow_query_log=ON                           # 开启慢查询日志
+long_query_time=2                           # 超过2秒即为慢查询
+log_queries_not_using_indexes=OFF           # 是否记录所有未使用索引的查询
+slow_query_log_file=/var/log/mysql/slow.log # 慢查询日志路径
+
+log_timestamps=SYSTEM      # 使用标准系统时间记录日志
+
+## 缓冲区与内存配置
+tmp_table_size=32M         # 内存临时表 (用于复杂查询/GROUP BY)最大值 默认值16MB
+max_heap_table_size=32M    # 内存表(MEMORY 引擎)最大值 通常设为与tmp_table_size一致 默认值16MB
+read_rnd_buffer_size=256K  # 随机读缓冲区(用于排序后的读取) 默认值256KB
+read_buffer_size=256K      # 顺序读缓冲区
+sort_buffer_size=512K      # 排序缓冲区(ORDER BY/GROUP BY) 默认256K
+thread_cache_size=16       # 线程缓存 减少高并发下线程创建/销毁的开销

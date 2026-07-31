@@ -1,0 +1,48 @@
+{
+  "inbounds": [
+    {
+      "tag": "HYSTERIA2-38438.json",
+      "port": 38438,
+      "listen": "::",
+      "protocol": "hysteria",
+      "settings": {
+        "users": [
+          {
+            "auth": "openssl rand -base64 22 | tr '+/' '-_' | tr -d '='"
+          }
+        ],
+        "version": 2
+      },
+      "streamSettings": {
+        "method": "hysteria",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "www.dmm.com",
+          "alpn": ["h3"],
+          "certificates": [
+            {
+              "certificateFile": "/etc/xray/cert/certificate.crt",
+              "keyFile": "/etc/xray/cert/private.key"
+            }
+          ]
+        },
+        "hysteriaSettings": {
+          "version": 2
+        },
+        "finalmask": {
+          "quicParams": {
+            "congestion": "force-brutal",
+            "debug": false,
+            "brutalUp": "950 mbps",
+            "brutalDown": "150 mbps"
+          }
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": ["http", "tls", "quic"],
+        "routeOnly": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+[mysql]
+default-character-set=utf8mb4
+
+[client]
+default-character-set=utf8mb4
+# socket=/var/run/mysqld/mysqld.sock
+
+[mysqld]
+## 网络与连接设置
+port=3306
+host_cache_size=0
+skip-name-resolve         # 禁用DNS反向解析，提升连接速度和稳定性
+max_allowed_packet=256M   # 最大允许的数据包大小 默认值64MB
+max_connections=500       # 最大连接数，根据PHP-FPM的pm.max_children来设定 默认值151
+connect_timeout=10        # 连接超时时间，防止慢连接攻击 默认值10
+max_connect_errors=100    # 最大连接错误数 默认值100
+net_read_timeout=60       # 网络读取超时时间 默认值30
+
+## 基础与安全设置
+default-storage-engine=INNODB # 默认存储引擎
+character-set-server=utf8mb4  # 字符集设置
+# collation-server=utf8mb4_general_ci
+# default-authentication-plugin=mysql_native_password # 默认身份验证插件
+sql_mode=STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ZERO_DATE,NO_ENGINE_SUBSTITUTION # SQL模式设置
+
+## InnoDB核心引擎
+innodb_buffer_pool_size=750M  # InnoDB缓冲池大小
+innodb_log_buffer_size=32M    # InnoDB日志缓冲区大小
+innodb_redo_log_capacity=512M # nnoDB日志文件大小
+innodb_numa_interleave=0
+
+## 路径与文件
+# datadir=/var/lib/mysql # MySQL存储所有数据文件的根目录，包括数据库、表、索引、以及二进制日志文件
+# socket=/var/run/mysqld/mysqld.sock # MySQL服务器为本地客户端连接创建的Unix套接字文件的路径
+# log-error=/var/log/mysql/error.log
+# pid-file=/var/run/mysqld/mysqld.pid
+
+## 日志
+secure_log_path=/var/log/mysql
+log_bin=/var/log/mysql/binlog      # 开启二进制日志功能
+sync_binlog=1                      # 强制要求MySQL在每次提交事务后，都必须将二进制日志事件同步刷写到磁盘上
+max_binlog_size=512M               # 最大二进制日志文件大小
+binlog_expire_logs_seconds=604800  # binlog过期时间7天
+
+## 慢查询日志
+slow_query_log=ON                           # 慢查询日志开启
+long_query_time=2                           # 慢查询阈值设置为2秒
+log_queries_not_using_indexes=ON            # 记录所有未使用索引的查询
+slow_query_log_file=/var/log/mysql/slow.log
+
+log_timestamps=SYSTEM     # 日志时间戳格式
+
+## 缓冲区与内存配置
+tmp_table_size=32M        # 设置内存临时表的大小，提升复杂查询性能 默认值16MB
+max_heap_table_size=32M   # 默认值16MB
+
+## 会话级缓冲区
+read_rnd_buffer_size=1M  # 随机读缓冲区大小 默认值256KB
+read_buffer_size=1M      # 读取缓冲区大小
+sort_buffer_size=1M      # 排序缓冲区大小

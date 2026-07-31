@@ -1,0 +1,93 @@
+{
+  "log": {
+    "level": "warn",
+    "output": "/var/log/sing-box/sing-box.log",
+    "timestamp": true
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "local",
+        "prefer_go": true
+      }
+    ],
+    "strategy": "prefer_ipv4"
+  },
+  "ntp": {
+    "enabled": true,
+    "server": "time.apple.com",
+    "server_port": 123,
+    "interval": "60m"
+  },
+  "outbounds": [
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    },
+    {
+      "type": "socks",
+      "tag": "proxy",
+      "server": "8.8.8.8",
+      "server_port": 10086,
+      "version": "5",
+      "username": "admin",
+      "password": "admin"
+    }
+  ],
+  "route": {
+    "rule_set": [
+      {
+        "type": "remote",
+        "tag": "geoip-cn",
+        "format": "binary",
+        "url": "https://fastly.jsdelivr.net/gh/SagerNet/sing-geoip@rule-set/geoip-cn.srs",
+        "download_detour": "direct",
+        "update_interval": "1d"
+      },
+      {
+        "type": "remote",
+        "tag": "geosite-category-ads-all",
+        "format": "binary",
+        "url": "https://fastly.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-category-ads-all.srs",
+        "download_detour": "direct",
+        "update_interval": "1d"
+      }
+    ],
+    "rules": [
+      {
+        "action": "sniff"
+      },
+      {
+        "protocol": ["bittorrent"],
+        "action": "route",
+        "outbound": "block"
+      },
+      {
+        "ip_is_private": true,
+        "action": "route",
+        "outbound": "block"
+      },
+      {
+        "rule_set": ["geoip-cn"],
+        "action": "route",
+        "outbound": "block"
+      },
+      {
+        "rule_set": ["geosite-category-ads-all"],
+        "action": "route",
+        "outbound": "block"
+      },
+      {
+        "ip_cidr": ["0.0.0.0/0", "::/0"],
+        "action": "route",
+        "outbound": "proxy"
+      }
+    ],
+    "final": "proxy",
+    "auto_detect_interface": true
+  }
+}
