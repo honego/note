@@ -15,6 +15,24 @@
     {
       "tag": "block",
       "protocol": "blackhole"
+    },
+    {
+      "tag": "proxy",
+      "protocol": "socks",
+      "settings": {
+        "servers": [
+          {
+            "address": "8.8.8.8",
+            "port": 10086,
+            "users": [
+              {
+                "user": "admin",
+                "pass": "admin"
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "routing": {
@@ -34,6 +52,22 @@
         "type": "field",
         "ip": ["geoip:private", "geoip:cn"],
         "outboundTag": "block"
+      },
+      {
+        "type": "field",
+        "domain": [
+          "geosite:category-ai-!cn",
+          "geosite:apple",
+          "geosite:bing",
+          "geosite:google",
+          "geosite:reddit",
+          "geosite:steam",
+          "geosite:tvb",
+          "geosite:x",
+          "geosite:category-ip-geo-detect",
+          "geosite:category-entertainment"
+        ],
+        "outboundTag": "proxy"
       }
     ]
   }
