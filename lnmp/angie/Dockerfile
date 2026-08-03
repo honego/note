@@ -59,7 +59,7 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --with-http_v2_module \
     --with-http_v3_module \
     --with-http_xslt_module=dynamic \
-# Stream 模块
+# Stream modules
     --with-stream \
     --with-stream_acme_module \
     --with-stream_mqtt_preread_module \
