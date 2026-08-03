@@ -75,7 +75,7 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --without-mail_smtp_module \
     "
 
-ARG RESTY_CONFIG_DEPS="\
+ARG ANGIE_CONFIG_DEPS="\
     --with-ld-opt='-Wl,-z,relro -Wl,-z,now' \
     "
 
