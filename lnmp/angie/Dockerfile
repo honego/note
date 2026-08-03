@@ -16,22 +16,25 @@ LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 ARG ANGIE_VERSION="1.12.1"
 
 ARG ANGIE_CONFIG_OPTIONS="\
-    --prefix=/etc/angie \
-    --conf-path=/etc/angie/angie.conf \
-    --error-log-path=/var/log/angie/error.log \
-    --http-log-path=/var/log/angie/access.log \
-    --lock-path=/run/angie.lock \
-    --modules-path=/usr/lib/angie/modules \
-    --pid-path=/run/angie.pid \
-    --sbin-path=/usr/sbin/angie \
-    --http-acme-client-path=/var/lib/angie/acme \
-    --http-client-body-temp-path=/var/cache/angie/client_temp \
-    --http-fastcgi-temp-path=/var/cache/angie/fastcgi_temp \
-    --http-proxy-temp-path=/var/cache/angie/proxy_temp \
-    --http-scgi-temp-path=/var/cache/angie/scgi_temp \
-    --http-uwsgi-temp-path=/var/cache/angie/uwsgi_temp \
+    # general
     --user=angie \
     --group=angie \
+    # paths
+    --prefix=/etc/angie \
+    --sbin-path=/usr/sbin/angie \
+    --modules-path=/usr/lib/angie/modules \
+    --conf-path=/etc/angie/angie.conf \
+    --error-log-path=/var/log/angie/error.log \
+    --pid-path=/run/angie.pid \
+    --lock-path=/run/angie.lock \
+    --http-acme-client-path=/var/lib/angie/acme \
+    --http-log-path=/var/log/angie/access.log \
+    --http-client-body-temp-path=/var/cache/angie/client_temp \
+    --http-proxy-temp-path=/var/cache/angie/proxy_temp \
+    --http-fastcgi-temp-path=/var/cache/angie/fastcgi_temp \
+    --http-uwsgi-temp-path=/var/cache/angie/uwsgi_temp \
+    --http-scgi-temp-path=/var/cache/angie/scgi_temp \
+    # features and dependencies
     --with-file-aio \
     --with-http_acme_module \
     --with-http_addition_module \
@@ -59,7 +62,6 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --with-stream_ssl_module \
     --with-stream_ssl_preread_module \
     --with-threads \
-    --feature-cache=../angie-feature-cache \
     "
 
 ARG RESTY_CONFIG_DEPS="\
