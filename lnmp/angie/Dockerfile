@@ -90,6 +90,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
 
 EXPOSE 80
 
+# Use SIGQUIT instead of default SIGTERM to cleanly drain requests.
+# See https://github.com/nginx/docker-nginx/issues/377
 STOPSIGNAL SIGQUIT
 
 CMD ["angie", "-g", "daemon off;"]
