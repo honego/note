@@ -16,10 +16,10 @@ LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 ARG ANGIE_VERSION="1.12.1"
 
 ARG ANGIE_CONFIG_OPTIONS="\
-    # general
+# general
     --user=angie \
     --group=angie \
-    # paths
+# paths
     --prefix=/etc/angie \
     --sbin-path=/usr/sbin/angie \
     --modules-path=/usr/lib/angie/modules \
@@ -34,7 +34,7 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --http-fastcgi-temp-path=/var/cache/angie/fastcgi_temp \
     --http-uwsgi-temp-path=/var/cache/angie/uwsgi_temp \
     --http-scgi-temp-path=/var/cache/angie/scgi_temp \
-    # features and dependencies
+# features and dependencies
     --with-file-aio \
     --with-http_acme_module \
     --with-http_addition_module \
