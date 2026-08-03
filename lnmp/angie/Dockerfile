@@ -87,3 +87,9 @@ RUN set -ex \
 # https://github.com/ammnt/angie
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD ["angie", "-qt"]
+
+EXPOSE 80
+
+STOPSIGNAL SIGQUIT
+
+CMD ["angie", "-g", "daemon off;"]
