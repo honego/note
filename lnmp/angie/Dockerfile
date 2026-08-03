@@ -5,7 +5,7 @@
 # https://cn.angie.software/angie/docs/installation/sourcebuild
 # https://github.com/nginx/docker-nginx
 # https://tongsuo.net/docs/features/angie
-# https://github.com/ammnt/angie
+# https://www.keeptrust.cn/help/zsk/836.html
 
 FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS base
 
@@ -83,3 +83,7 @@ RUN set -ex \
         openssl-dev \
         pcre2-dev \
     && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz -o angie-$ANGIE_VERSION.tar.gz
+
+# https://github.com/ammnt/angie
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD ["angie", "-qt"]
