@@ -16,10 +16,10 @@ LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 ARG ANGIE_VERSION="1.12.1"
 
 ARG ANGIE_CONFIG_OPTIONS="\
-# general
+# General
     --user=angie \
     --group=angie \
-# paths
+# Paths
     --prefix=/etc/angie \
     --sbin-path=/usr/sbin/angie \
     --modules-path=/usr/lib/angie/modules \
@@ -34,8 +34,12 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --http-fastcgi-temp-path=/var/cache/angie/fastcgi_temp \
     --http-uwsgi-temp-path=/var/cache/angie/uwsgi_temp \
     --http-scgi-temp-path=/var/cache/angie/scgi_temp \
-# features and dependencies
+# Features and dependencies
+    --with-threads \
     --with-file-aio \
+    --with-pcre \
+    --with-pcre-jit \
+# HTTP
     --with-http_acme_module \
     --with-http_addition_module \
     --with-http_auth_request_module \
@@ -43,6 +47,7 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --with-http_flv_module \
     --with-http_gunzip_module \
     --with-http_gzip_static_module \
+    --with-http_image_filter_module=dynamic \
     --with-http_mp4_module \
     --with-http_random_index_module \
     --with-http_realip_module \
@@ -53,7 +58,8 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --with-http_sub_module \
     --with-http_v2_module \
     --with-http_v3_module \
-    --with-mail_ssl_module \
+    --with-http_xslt_module=dynamic \
+# Stream 模块
     --with-stream \
     --with-stream_acme_module \
     --with-stream_mqtt_preread_module \
@@ -61,7 +67,9 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --with-stream_realip_module \
     --with-stream_ssl_module \
     --with-stream_ssl_preread_module \
-    --with-threads \
+# Mail
+    --with-mail \
+    --with-mail_ssl_module \
     "
 
 ARG RESTY_CONFIG_DEPS="\
