@@ -92,7 +92,7 @@ RUN set -ex \
         gettext-envsubst \
         tzdata \
     && cd /tmp \
-    && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz -o angie-$ANGIE_VERSION.tar.gz
+    && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz -
 
 # https://github.com/ammnt/angie
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
