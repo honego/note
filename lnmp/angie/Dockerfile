@@ -70,6 +70,9 @@ ARG ANGIE_CONFIG_OPTIONS="\
 # Mail
     --with-mail \
     --with-mail_ssl_module \
+    --without-mail_imap_module \
+    --without-mail_pop3_module \
+    --without-mail_smtp_module \
     "
 
 ARG RESTY_CONFIG_DEPS="\
@@ -82,6 +85,13 @@ RUN set -ex \
     && apk add --no-cache --virtual .build-deps \
         openssl-dev \
         pcre2-dev \
+        zlib-dev \
+    && apk add --no-cache \
+        curl \
+# Add `envsubst` for templating environment variables
+        gettext-envsubst \
+        tzdata \
+    && cd /tmp \
     && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz -o angie-$ANGIE_VERSION.tar.gz
 
 # https://github.com/ammnt/angie
