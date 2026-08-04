@@ -14,6 +14,7 @@ FROM base AS dist
 LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
 ARG ANGIE_VERSION="1.12.1"
+ARG TONGSUO_VERSION="8.5.0-pre2"
 
 ARG ANGIE_CONFIG_OPTIONS="\
 # General
@@ -39,6 +40,9 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --with-file-aio \
     --with-pcre \
     --with-pcre-jit \
+    --with-openssl=../Tongsuo-$TONGSUO_VERSION \
+    --with-openssl-opt=enable-ntls \
+    --with-ntls \
 # HTTP
     --with-http_acme_module \
     --with-http_addition_module \
@@ -83,7 +87,6 @@ RUN set -ex \
     && addgroup -g 101 -S angie \
     && adduser -S -D -H -u 101 -h /var/cache/angie -s /sbin/nologin -G angie -g angie angie \
     && apk add --no-cache --virtual .build-deps \
-        openssl-dev \
         pcre2-dev \
         zlib-dev \
     && apk add --no-cache \
@@ -92,6 +95,7 @@ RUN set -ex \
         gettext-envsubst \
         tzdata \
     && cd /tmp \
+    && curl -fsSL https://github.com/Tongsuo-Project/Tongsuo/archive/tags/$TONGSUO_VERSION.tar.gz | tar fxz - --transform="s#^[^/]*#Tongsuo-$TONGSUO_VERSION#" \
     && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz -
 
 # https://github.com/ammnt/angie
