@@ -202,8 +202,6 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 
 EXPOSE 80
 
-USER angie:angie
-
 # https://github.com/ammnt/angie
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD ["angie", "-qt"]
