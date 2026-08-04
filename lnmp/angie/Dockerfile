@@ -130,6 +130,7 @@ RUN set -ex \
         zlib-dev \
     && apk add --no-cache \
         curl \
+# Add `envsubst` for templating environment variables
         gettext-envsubst \
         tzdata \
     && cd /tmp \
@@ -181,7 +182,7 @@ RUN set -ex \
 # forward request and error logs to docker log collector
     && ln -sf /dev/stdout /var/log/angie/access.log \
     && ln -sf /dev/stderr /var/log/angie/error.log \
-# forward request and error logs to docker log collector
+# create a docker-entrypoint.d directory
     && mkdir /docker-entrypoint.d \
     && apk del --no-network .build-deps \
     && rm -rf /var/cache/apk/* /tmp/*
