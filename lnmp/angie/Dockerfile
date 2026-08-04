@@ -9,9 +9,7 @@
 
 FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS base
 
-FROM base AS dist
-
-LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
+FROM base AS deps
 
 ## angie
 ARG ANGIE_VERSION="1.12.1"
@@ -22,13 +20,72 @@ ENV ANGIE_VERSION=$ANGIE_VERSION
 ARG NGX_GEOIP2_VERSION="3.4"
 ENV NGX_GEOIP2_VERSION=$NGX_GEOIP2_VERSION
 
-# https://github.com/nginx/njs
-ARG NGX_NJS_VERSION="1.0.0"
-ENV NGX_NJS_VERSION=$NGX_NJS_VERSION
-
 # https://github.com/facebook/zstd
 ARG NGX_ZSTD_VERSION="1.5.7"
 ENV NGX_ZSTD_VERSION=$NGX_ZSTD_VERSION
+
+ARG ANGIE_OPENSSL_VERSION="3.5.7"
+ARG ANGIE_OPENSSL_PATCH_VERSION="3.5.5"
+ARG ANGIE_OPENSSL_URL_BASE="https://github.com/openssl/openssl/releases/download/openssl-$ANGIE_OPENSSL_VERSION"
+
+ARG ANGIE_PCRE_VERSION="10.47"
+
+ARG ANGIE_DYNA_BUILD_OPTIONS="\
+    --with-stream \
+    --with-compat \
+    --add-dynamic-module=../ngx_brotli \
+    --add-dynamic-module=../ngx_http_geoip2_module-$NGX_GEOIP2_VERSION \
+    --add-dynamic-module=../zstd-nginx-module \
+    "
+
+RUN set -ex \
+    && apk add --update --no-cache --virtual .build-deps \
+        brotli-dev \
+        build-base \
+        curl \
+        git \
+        libmaxminddb-dev \
+        lz4-dev \
+        tar \
+        xz-dev \
+        zlib-dev \
+    && cd /tmp \
+    && curl -fsSL $ANGIE_OPENSSL_URL_BASE/openssl-$ANGIE_OPENSSL_VERSION.tar.gz | tar fxz - \
+    && cd openssl-$ANGIE_OPENSSL_VERSION \
+    && curl -fsSL https://github.com/openresty/openresty/raw/master/patches/openssl-$ANGIE_OPENSSL_PATCH_VERSION-sess_set_get_cb_yield.patch | patch -p1 \
+    && cd /tmp \
+    && curl -fsSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$ANGIE_PCRE_VERSION/pcre2-$ANGIE_PCRE_VERSION.tar.gz | tar fxz - \
+# install third-party modules.
+    && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
+    && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$NGX_GEOIP2_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/facebook/zstd/releases/download/v$NGX_ZSTD_VERSION/zstd-$NGX_ZSTD_VERSION.tar.gz | tar fxz - \
+    && cd zstd-$NGX_ZSTD_VERSION \
+    && make clean \
+    && CFLAGS="-fPIC" make -j$(nproc) \
+    && make -j$(nproc) install \
+    && cd /tmp \
+    && git clone --depth=10 https://github.com/tokers/zstd-nginx-module.git \
+    && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz - \
+    && cd angie-$ANGIE_VERSION \
+    && eval ./configure \
+        --with-pcre=../pcre2-$ANGIE_PCRE_VERSION \
+        --with-pcre-jit \
+        --with-openssl=../openssl-$ANGIE_OPENSSL_VERSION \
+        $ANGIE_DYNA_BUILD_OPTIONS \
+    && make \
+    && strip objs/*.so \
+    && apk del --no-network .build-deps \
+    && rm -rf /var/cache/apk/*
+
+FROM base AS dist
+
+LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
+
+COPY --from=deps /tmp/angie-$ANGIE_VERSION/objs/*.so /usr/lib/angie/modules/
+
+## angie
+ARG ANGIE_VERSION="1.12.1"
+ENV ANGIE_VERSION=$ANGIE_VERSION
 
 # https://github.com/vision5/ngx_devel_kit
 ARG NGX_DEVEL_KIT_VERSION="0.3.4"
@@ -169,6 +226,11 @@ ARG ANGIE_BUILD_OPTIONS="\
     --without-mail_smtp_module \
     "
 
+ARG ANGIE_BUILD_DEPS="\
+    --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/openssl3/include -I/usr/local/pcre2/include' \
+    --with-ld-opt='-L/usr/local/openssl3/lib -L/usr/local/pcre2/lib -Wl,-rpath,/usr/local/luajit/lib:/usr/local/openssl3/lib:/usr/local/pcre2/lib -Wl,-z,relro -Wl,-z,now' \
+    "
+
 ARG ANGIE_ADD_BUILD_OPTIONS="\
     --add-module=../ngx_devel_kit-$NGX_DEVEL_KIT_VERSION \
     --add-module=../lua-resty-core-$RESTY_LUA_CORE_VERSION \
@@ -185,38 +247,15 @@ ARG ANGIE_ADD_BUILD_OPTIONS="\
     --add-module=../nginx-lua-prometheus-$RESTY_LUA_PROMETHEUS_VERSION \
     "
 
-ARG ANGIE_DYNA_BUILD_OPTIONS="\
-    --with-compat \
-    --add-dynamic-module=../ngx_brotli \
-    --add-dynamic-module=../ngx_http_geoip2_module-$NGX_GEOIP2_VERSION \
-    --add-dynamic-module=../njs-$NGX_NJS_VERSION/nginx \
-    --add-dynamic-module=../zstd-nginx-module \
-    "
-
-ARG ANGIE_BUILD_DEPS="\
-    --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/openssl3/include -I/usr/local/pcre2/include' \
-    --with-ld-opt='-L/usr/local/openssl3/lib -L/usr/local/pcre2/lib -Wl,-rpath,/usr/local/openssl3/lib:/usr/local/pcre2/lib -Wl,-z,relro -Wl,-z,now' \
-    "
-
-ARG ANGIE_LUAJIT_OPTIONS=""
+ARG ANGIE_LUAJIT_OPTIONS="--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'"
 
 RUN set -ex \
     && addgroup -g 101 -S angie \
     && adduser -S -D -H -u 101 -h /var/cache/angie -s /sbin/nologin -G angie -g angie angie \
     && apk add --no-cache --virtual .build-deps \
-        brotli-dev \
         build-base \
-        git \
-        gd-dev \
-        libxml2-dev \
-        libxslt-dev \
-        libmaxminddb-dev \
         linux-headers \
-        lz4-dev \
-        quickjs-dev \
         tar \
-        xz-dev \
-        zlib-dev \
     && apk add --no-cache \
         curl \
 # Add `envsubst` for templating environment variables
@@ -263,21 +302,10 @@ RUN set -ex \
     && curl -fsSL https://github.com/openresty/lua-resty-lock/archive/v$RESTY_LUA_LOCK_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/lua-resty-balancer/archive/v$RESTY_LUA_BALANCER_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/knyar/nginx-lua-prometheus/archive/$RESTY_LUA_PROMETHEUS_VERSION.tar.gz | tar fxz - \
-# install third-party modules.
-    && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
-    && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$NGX_GEOIP2_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/nginx/njs/archive/$NGX_NJS_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/facebook/zstd/releases/download/v$NGX_ZSTD_VERSION/zstd-$NGX_ZSTD_VERSION.tar.gz | tar fxz - \
-    && cd zstd-$NGX_ZSTD_VERSION \
-    && make clean \
-    && CFLAGS="-fPIC" make -j$(nproc) \
-    && make -j$(nproc) install \
-    && cd /tmp \
-    && git clone --depth=10 https://github.com/tokers/zstd-nginx-module.git \
 # run build.
     && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz - \
     && cd angie-$ANGIE_VERSION \
-    && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_DYNA_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_LUAJIT_OPTIONS \
+    && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_ADD_BUILD_OPTIONS $ANGIE_LUAJIT_OPTIONS \
     && make -j$(nproc) \
     && make -j$(nproc) install \
 # https://github.com/nginx/pkg-oss/blob/master/alpine/alpine/APKBUILD-base.in
