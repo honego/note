@@ -9,13 +9,13 @@
 set -eu
 
 LC_ALL=C
-ME=$(basename "$0")
+SCRIPT_NAME="$(basename "$0")"
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-[ "${NGINX_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE:-}" ] || exit 0
+[ "${ANGIE_ENTRYPOINT_WORKER_PROCESSES_AUTOTUNE:-}" ] || exit 0
 
-touch /etc/nginx/nginx.conf 2> /dev/null || {
-    echo >&2 "$ME: error: can not modify /etc/nginx/nginx.conf (read-only file system?)"
+touch /etc/angie/angie.conf 2> /dev/null || {
+    echo >&2 "$SCRIPT_NAME: error: can not modify /etc/angie/angie.conf (read-only file system?)"
     exit 0
 }
 
@@ -194,4 +194,4 @@ ncpu=$(printf "%s\n%s\n%s\n%s\n%s\n" \
     sort -n |
     head -n 1)
 
-sed -i.bak -r 's/^(worker_processes)(.*)$/# Commented out by '"$ME"' on '"$(date)"'\n#\1\2\n\1 '"$ncpu"';/' /etc/nginx/nginx.conf
+sed -i.bak -r 's/^(worker_processes)(.*)$/# Commented out by '"$SCRIPT_NAME"' on '"$(date)"'\n#\1\2\n\1 '"$ncpu"';/' /etc/angie/angie.conf
