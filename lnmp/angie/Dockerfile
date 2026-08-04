@@ -87,8 +87,8 @@ COPY --from=deps /tmp/angie-$ANGIE_VERSION/objs/*.so /usr/lib/angie/modules/
 ARG ANGIE_VERSION="1.12.1"
 ENV ANGIE_VERSION=$ANGIE_VERSION
 
-# https://github.com/vision5/ngx_devel_kit
-ARG NGX_DEVEL_KIT_VERSION="0.3.4"
+# https://github.com/openresty/ngx_devel_kit
+ARG NGX_DEVEL_KIT_VERSION="0.3.5"
 ENV NGX_DEVEL_KIT_VERSION=$NGX_DEVEL_KIT_VERSION
 
 ## lua
@@ -303,7 +303,7 @@ RUN set -ex \
     && make install LUA_LIB_DIR=$RESTY_LUALIB_PATH \
     && cd /tmp \
 # install openresty modules.
-    && curl -fsSL https://github.com/vision5/ngx_devel_kit/archive/v$NGX_DEVEL_KIT_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/ngx_devel_kit/archive/v$NGX_DEVEL_KIT_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/lua-nginx-module/archive/v$RESTY_LUA_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$RESTY_HEADERS_MORE_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/stream-lua-nginx-module/archive/v$RESTY_LUA_STREAM_VERSION.tar.gz | tar fxz - \
