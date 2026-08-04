@@ -14,9 +14,8 @@ FROM base AS dist
 LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
 ARG ANGIE_VERSION="1.12.1"
-ARG TONGSUO_VERSION="8.5.0-pre2"
 
-ARG ANGIE_CONFIG_OPTIONS="\
+ARG ANGIE_BUILD_OPTIONS="\
 # General
     --user=angie \
     --group=angie \
@@ -40,9 +39,6 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --with-file-aio \
     --with-pcre \
     --with-pcre-jit \
-    --with-openssl=../Tongsuo-$TONGSUO_VERSION \
-    --with-openssl-opt=enable-ntls \
-    --with-ntls \
 # HTTP
     --with-http_acme_module \
     --with-http_addition_module \
@@ -79,30 +75,42 @@ ARG ANGIE_CONFIG_OPTIONS="\
     --without-mail_smtp_module \
     "
 
-ARG ANGIE_CONFIG_DEPS="\
+ARG ANGIE_BUILD_DEPS="\
     --with-ld-opt='-Wl,-z,relro -Wl,-z,now' \
     "
+
+ARG ANGIE_LUAJIT_OPTIONS=""
 
 RUN set -ex \
     && addgroup -g 101 -S angie \
     && adduser -S -D -H -u 101 -h /var/cache/angie -s /sbin/nologin -G angie -g angie angie \
     && apk add --no-cache --virtual .build-deps \
+        build-base \
+        gd-dev \
+        libxml2-dev \
+        libxslt-dev \
+        linux-headers \
+        openssl-dev \
         pcre2-dev \
+        tar \
         zlib-dev \
     && apk add --no-cache \
         curl \
-# Add `envsubst` for templating environment variables
         gettext-envsubst \
         tzdata \
     && cd /tmp \
-    && curl -fsSL https://github.com/Tongsuo-Project/Tongsuo/archive/tags/$TONGSUO_VERSION.tar.gz | tar fxz - --transform="s#^[^/]*#Tongsuo-$TONGSUO_VERSION#" \
-    && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz -
+    && curl -fsSL https://download.angie.software/files/angie-${ANGIE_VERSION}.tar.gz | tar fxz - \
+    && cd angie-${ANGIE_VERSION} \
+    && eval ./configure ${ANGIE_BUILD_OPTIONS} ${ANGIE_BUILD_DEPS} ${ANGIE_LUAJIT_OPTIONS} \
+    && make -j$(nproc) \
+    && make -j$(nproc) install \
+    && apk del --no-network .build-deps
+
+EXPOSE 80
 
 # https://github.com/ammnt/angie
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD ["angie", "-qt"]
-
-EXPOSE 80
 
 # Use SIGQUIT instead of default SIGTERM to cleanly drain requests.
 # See https://github.com/nginx/docker-nginx/issues/377
