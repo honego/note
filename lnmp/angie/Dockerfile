@@ -13,12 +13,81 @@ FROM base AS dist
 
 LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
+## angie
 ARG ANGIE_VERSION="1.12.1"
-ARG GEOIP2_VERSION="3.4"
-ARG HEADERS_MORE_VERSION="0.40"
-ARG NJS_VERSION="1.0.0"
-ARG ZSTD_VERSION="1.5.7"
+ENV ANGIE_VERSION=$ANGIE_VERSION
 
+## angie modules
+# https://github.com/leev/ngx_http_geoip2_module
+ARG NGX_GEOIP2_VERSION="3.4"
+ENV NGX_GEOIP2_VERSION=$NGX_GEOIP2_VERSION
+
+# https://github.com/nginx/njs
+ARG NGX_NJS_VERSION="1.0.0"
+ENV NGX_NJS_VERSION=$NGX_NJS_VERSION
+
+# https://github.com/facebook/zstd
+ARG NGX_ZSTD_VERSION="1.5.7"
+ENV NGX_ZSTD_VERSION=$NGX_ZSTD_VERSION
+
+# https://github.com/vision5/ngx_devel_kit
+ARG NGX_DEVEL_KIT_VERSION="0.3.4"
+ENV NGX_DEVEL_KIT_VERSION=$NGX_DEVEL_KIT_VERSION
+
+## lua
+# https://github.com/openresty/luajit2
+ARG RESTY_LUAJIT_VERSION="2.1-20260724"
+ENV RESTY_LUAJIT_VERSION=$RESTY_LUAJIT_VERSION
+
+# https://github.com/openresty/lua-resty-core
+ARG RESTY_LUA_CORE_VERSION="0.1.35rc1"
+ENV RESTY_LUA_CORE_VERSION=$RESTY_LUA_CORE_VERSION
+
+# https://github.com/openresty/lua-resty-lrucache
+ARG RESTY_LUA_LRUCACHE_VERSION="0.15"
+ENV RESTY_LUA_LRUCACHE_VERSION=$RESTY_LUA_LRUCACHE_VERSION
+
+# https://github.com/openresty/lua-nginx-module
+ARG RESTY_LUA_VERSION="0.10.32rc3"
+ENV RESTY_LUA_VERSION=$RESTY_LUA_VERSION
+
+# https://github.com/openresty/lua-upstream-nginx-module
+ARG RESTY_LUA_UPSTREAM_VERSION="0.08"
+ENV RESTY_LUA_UPSTREAM_VERSION=$RESTY_LUA_UPSTREAM_VERSION
+
+# https://github.com/openresty/headers-more-nginx-module
+ARG RESTY_HEADERS_MORE_VERSION="0.40"
+ENV RESTY_HEADERS_MORE_VERSION=$RESTY_HEADERS_MORE_VERSION
+
+# https://github.com/openresty/lua-resty-redis
+ARG RESTY_LUA_REDIS_VERSION="0.33"
+ENV RESTY_LUA_REDIS_VERSION=$RESTY_LUA_REDIS_VERSION
+
+# https://github.com/openresty/lua-resty-memcached
+ARG RESTY_LUA_MEMCACHED_VERSION="0.18"
+ENV RESTY_LUA_MEMCACHED_VERSION=$RESTY_LUA_MEMCACHED_VERSION
+
+# https://github.com/openresty/stream-lua-nginx-module
+ARG RESTY_LUA_STREAM_VERSION="0.0.20rc2"
+ENV RESTY_LUA_STREAM_VERSION=$RESTY_LUA_STREAM_VERSION
+
+# https://github.com/openresty/lua-resty-dns
+ARG RESTY_LUA_DNS_VERSION="0.23"
+ENV RESTY_LUA_DNS_VERSION=$RESTY_LUA_DNS_VERSION
+
+# https://github.com/openresty/lua-resty-lock
+ARG RESTY_LUA_LOCK_VERSION="0.09"
+ENV RESTY_LUA_LOCK_VERSION=$RESTY_LUA_LOCK_VERSION
+
+# https://github.com/openresty/lua-resty-balancer
+ARG RESTY_LUA_BALANCER_VERSION="0.05"
+ENV RESTY_LUA_BALANCER_VERSION=$RESTY_LUA_BALANCER_VERSION
+
+# https://github.com/knyar/nginx-lua-prometheus
+ARG RESTY_LUA_PROMETHEUS_VERSION="0.20240525"
+ENV RESTY_LUA_PROMETHEUS_VERSION=$RESTY_LUA_PROMETHEUS_VERSION
+
+## Build arguments.
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-openssl3/APKBUILD
 ARG ANGIE_OPENSSL_VERSION="3.5.7"
 ARG ANGIE_OPENSSL_PATCH_VERSION="3.5.5"
@@ -95,12 +164,15 @@ ARG ANGIE_BUILD_OPTIONS="\
     --without-mail_smtp_module \
     "
 
+ARG ANGIE_ADD_BUILD_OPTIONS="\
+    --add-module=../ngx_devel_kit-$NGX_DEVEL_KIT_VERSION \
+    "
+
 ARG ANGIE_DYNA_BUILD_OPTIONS="\
     --with-compat \
     --add-dynamic-module=../ngx_brotli \
-    --add-dynamic-module=../ngx_http_geoip2_module-$GEOIP2_VERSION \
-    --add-dynamic-module=../headers-more-nginx-module-$HEADERS_MORE_VERSION \
-    --add-dynamic-module=../njs-$NJS_VERSION/nginx \
+    --add-dynamic-module=../ngx_http_geoip2_module-$NGX_GEOIP2_VERSION \
+    --add-dynamic-module=../njs-$NGX_NJS_VERSION/nginx \
     --add-dynamic-module=../zstd-nginx-module \
     "
 
@@ -154,13 +226,20 @@ RUN set -ex \
     && CFLAGS="-g -O3" make -j$(nproc) \
     && CFLAGS="-g -O3" make -j$(nproc) install \
     && cd /tmp \
+# install luajit.
+    && curl -fsSL https://github.com/openresty/luajit2/archive/v$RESTY_LUAJIT_VERSION.tar.gz | tar fxz - \
+    && cd luajit2-$RESTY_LUAJIT_VERSION \
+    && make -j$(nproc) TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/luajit \
+    && make install TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/luajit \
+# install openresty modules.
+    && curl -fsSL https://github.com/vision5/ngx_devel_kit/archive/v$NGX_DEVEL_KIT_VERSION.tar.gz | tar fxz - \
 # install third-party modules.
     && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
-    && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$GEOIP2_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$HEADERS_MORE_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/nginx/njs/archive/$NJS_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/facebook/zstd/releases/download/v$ZSTD_VERSION/zstd-$ZSTD_VERSION.tar.gz | tar fxz - \
-    && cd zstd-$ZSTD_VERSION \
+    && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$NGX_GEOIP2_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$RESTY_HEADERS_MORE_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/nginx/njs/archive/$NGX_NJS_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/facebook/zstd/releases/download/v$NGX_ZSTD_VERSION/zstd-$NGX_ZSTD_VERSION.tar.gz | tar fxz - \
+    && cd zstd-$NGX_ZSTD_VERSION \
     && make clean \
     && CFLAGS="-fPIC" make -j$(nproc) \
     && make -j$(nproc) install \
