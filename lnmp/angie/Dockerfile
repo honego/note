@@ -15,6 +15,22 @@ LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
 ARG ANGIE_VERSION="1.12.1"
 
+# https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-openssl3/APKBUILD
+ARG ANGIE_OPENSSL_VERSION="3.5.7"
+ARG ANGIE_OPENSSL_PATCH_VERSION="3.5.5"
+ARG ANGIE_OPENSSL_URL_BASE="https://github.com/openssl/openssl/releases/download/openssl-$ANGIE_OPENSSL_VERSION"
+ARG ANGIE_OPENSSL_BUILD_OPTIONS="enable-camellia enable-cms enable-fips enable-ktls enable-md2 \
+    enable-rc5 enable-rfc3779 enable-seed enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers \
+    "
+
+# https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-pcre2/APKBUILD
+ARG ANGIE_PCRE_VERSION="10.47"
+ARG ANGIE_PCRE_BUILD_OPTIONS="--enable-jit --enable-pcre2grep-jit --disable-bsr-anycrlf --disable-coverage --disable-ebcdic --disable-fuzz-support \
+    --disable-jit-sealloc --disable-never-backslash-C --enable-newline-is-lf --enable-pcre2-8 --enable-pcre2-16 --enable-pcre2-32 \
+    --enable-pcre2grep-callout --enable-pcre2grep-callout-fork --disable-pcre2grep-libbz2 --disable-pcre2grep-libz --disable-pcre2test-libedit \
+    --enable-percent-zt --disable-rebuild-chartables --enable-shared --disable-static --disable-silent-rules --enable-unicode --disable-valgrind \
+    "
+
 ARG ANGIE_BUILD_OPTIONS="\
 # General
     --user=angie \
@@ -76,7 +92,8 @@ ARG ANGIE_BUILD_OPTIONS="\
     "
 
 ARG ANGIE_BUILD_DEPS="\
-    --with-ld-opt='-Wl,-z,relro -Wl,-z,now' \
+    --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/openssl3/include -I/usr/local/pcre2/include' \
+    --with-ld-opt='-L/usr/local/openssl3/lib -L/usr/local/pcre2/lib -Wl,-rpath,/usr/local/openssl3/lib:/usr/local/pcre2/lib -Wl,-z,relro -Wl,-z,now' \
     "
 
 ARG ANGIE_LUAJIT_OPTIONS=""
@@ -90,8 +107,6 @@ RUN set -ex \
         libxml2-dev \
         libxslt-dev \
         linux-headers \
-        openssl-dev \
-        pcre2-dev \
         tar \
         zlib-dev \
     && apk add --no-cache \
@@ -99,9 +114,28 @@ RUN set -ex \
         gettext-envsubst \
         tzdata \
     && cd /tmp \
-    && curl -fsSL https://download.angie.software/files/angie-${ANGIE_VERSION}.tar.gz | tar fxz - \
-    && cd angie-${ANGIE_VERSION} \
-    && eval ./configure ${ANGIE_BUILD_OPTIONS} ${ANGIE_BUILD_DEPS} ${ANGIE_LUAJIT_OPTIONS} \
+    && curl -fsSL $ANGIE_OPENSSL_URL_BASE/openssl-$ANGIE_OPENSSL_VERSION.tar.gz | tar fxz - \
+    && cd openssl-$ANGIE_OPENSSL_VERSION \
+    && curl -fsSL https://github.com/openresty/openresty/raw/master/patches/openssl-$ANGIE_OPENSSL_PATCH_VERSION-sess_set_get_cb_yield.patch | patch -p1 \
+    && eval ./config shared zlib \
+        --prefix=/usr/local/openssl3 \
+        --libdir=lib \
+        -Wl,-rpath,/usr/local/openssl3/lib \
+        $ANGIE_OPENSSL_BUILD_OPTIONS \
+    && make -j$(nproc) \
+    && make -j$(nproc) install_sw \
+    && curl -fsSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$ANGIE_PCRE_VERSION/pcre2-$ANGIE_PCRE_VERSION.tar.gz | tar fxz - \
+    && cd pcre2-$ANGIE_PCRE_VERSION \
+    && CFLAGS="-g -O3" ./configure \
+        --prefix=/usr/local/pcre2 \
+        --libdir=/usr/local/pcre2/lib \
+        $ANGIE_PCRE_BUILD_OPTIONS \
+    && CFLAGS="-g -O3" make -j$(nproc) \
+    && CFLAGS="-g -O3" make -j$(nproc) install \
+    && cd /tmp \
+    && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz - \
+    && cd angie-$ANGIE_VERSION \
+    && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_LUAJIT_OPTIONS \
     && make -j$(nproc) \
     && make -j$(nproc) install \
     && apk del --no-network .build-deps
