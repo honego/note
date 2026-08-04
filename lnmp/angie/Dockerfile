@@ -138,7 +138,19 @@ RUN set -ex \
     && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_LUAJIT_OPTIONS \
     && make -j$(nproc) \
     && make -j$(nproc) install \
-    && apk del --no-network .build-deps
+# Prepare the runtime environment
+    && apk del --no-network .build-deps \
+    && rm -f /etc/angie/*.default \
+    && mkdir -p /var/cache/angie \
+    && rm -rf /var/cache/apk/* \
+    && ln -sf /dev/stdout /var/log/angie/access.log \
+    && ln -sf /dev/stderr /var/log/angie/error.log \
+    && mkdir /docker-entrypoint.d
+
+# Copy nginx configuration files.
+COPY angie.conf /etc/angie/angie.conf
+COPY angie.vh.default.conf /etc/angie/conf.d/default.conf
+COPY html /usr/share/angie/html
 
 EXPOSE 80
 
