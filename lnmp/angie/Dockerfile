@@ -328,6 +328,9 @@ RUN set -ex \
     && apk del --no-network .build-deps \
     && rm -rf /var/cache/apk/* /tmp/*
 
+# Add additional binaries into PATH for convenience.
+ENV PATH=$PATH:/usr/local/angie/luajit/bin
+
 # Copy nginx configuration files.
 # https://github.com/nginx/pkg-oss/blob/master/alpine/alpine
 COPY angie.conf /etc/angie/angie.conf
