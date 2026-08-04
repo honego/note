@@ -4,7 +4,7 @@
 # Copyright (c) 2011-2023 F5, Inc.
 # Copyright (c) 2025-2026 honeok <i@honeok.com>
 #
-# Based on the nginx docker entrypoint script, modified for angie.
+# Based on the NGINX Docker entrypoint script, modified for Angie.
 
 set -eu
 
