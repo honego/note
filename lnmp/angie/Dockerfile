@@ -96,30 +96,20 @@ ENV NGX_DEVEL_KIT_VERSION=$NGX_DEVEL_KIT_VERSION
 ARG RESTY_LUAJIT_VERSION="2.1-20260724"
 ENV RESTY_LUAJIT_VERSION=$RESTY_LUAJIT_VERSION
 
-ARG LUAJIT_LIB="/usr/local/lib"
+ARG LUAJIT_LIB="/usr/local/angie/luajit/lib"
 ENV LUAJIT_LIB=$LUAJIT_LIB
-ARG LUAJIT_INC="/usr/local/luajit/include/luajit-2.1"
+ARG LUAJIT_INC="/usr/local/angie/luajit/include/luajit-2.1"
 ENV LUAJIT_INC=$LUAJIT_INC
+
+ARG RESTY_LUALIB_PATH="/usr/local/angie/lualib"
 
 # https://github.com/openresty/lua-resty-core
 ARG RESTY_LUA_CORE_VERSION="0.1.35rc1"
 ENV RESTY_LUA_CORE_VERSION=$RESTY_LUA_CORE_VERSION
 
-# https://github.com/openresty/lua-nginx-module
-ARG RESTY_LUA_VERSION="0.10.32rc3"
-ENV RESTY_LUA_VERSION=$RESTY_LUA_VERSION
-
 # https://github.com/openresty/lua-resty-lrucache
 ARG RESTY_LUA_LRUCACHE_VERSION="0.15"
 ENV RESTY_LUA_LRUCACHE_VERSION=$RESTY_LUA_LRUCACHE_VERSION
-
-# https://github.com/openresty/lua-upstream-nginx-module
-ARG RESTY_LUA_UPSTREAM_VERSION="0.08"
-ENV RESTY_LUA_UPSTREAM_VERSION=$RESTY_LUA_UPSTREAM_VERSION
-
-# https://github.com/openresty/headers-more-nginx-module
-ARG RESTY_HEADERS_MORE_VERSION="0.40"
-ENV RESTY_HEADERS_MORE_VERSION=$RESTY_HEADERS_MORE_VERSION
 
 # https://github.com/openresty/lua-resty-redis
 ARG RESTY_LUA_REDIS_VERSION="0.33"
@@ -128,10 +118,6 @@ ENV RESTY_LUA_REDIS_VERSION=$RESTY_LUA_REDIS_VERSION
 # https://github.com/openresty/lua-resty-memcached
 ARG RESTY_LUA_MEMCACHED_VERSION="0.18"
 ENV RESTY_LUA_MEMCACHED_VERSION=$RESTY_LUA_MEMCACHED_VERSION
-
-# https://github.com/openresty/stream-lua-nginx-module
-ARG RESTY_LUA_STREAM_VERSION="0.0.20rc2"
-ENV RESTY_LUA_STREAM_VERSION=$RESTY_LUA_STREAM_VERSION
 
 # https://github.com/openresty/lua-resty-dns
 ARG RESTY_LUA_DNS_VERSION="0.23"
@@ -145,9 +131,17 @@ ENV RESTY_LUA_LOCK_VERSION=$RESTY_LUA_LOCK_VERSION
 ARG RESTY_LUA_BALANCER_VERSION="0.05"
 ENV RESTY_LUA_BALANCER_VERSION=$RESTY_LUA_BALANCER_VERSION
 
-# https://github.com/knyar/nginx-lua-prometheus
-ARG RESTY_LUA_PROMETHEUS_VERSION="0.20240525"
-ENV RESTY_LUA_PROMETHEUS_VERSION=$RESTY_LUA_PROMETHEUS_VERSION
+# https://github.com/openresty/lua-nginx-module
+ARG RESTY_LUA_VERSION="0.10.32rc3"
+ENV RESTY_LUA_VERSION=$RESTY_LUA_VERSION
+
+# https://github.com/openresty/headers-more-nginx-module
+ARG RESTY_HEADERS_MORE_VERSION="0.40"
+ENV RESTY_HEADERS_MORE_VERSION=$RESTY_HEADERS_MORE_VERSION
+
+# https://github.com/openresty/stream-lua-nginx-module
+ARG RESTY_LUA_STREAM_VERSION="0.0.20rc2"
+ENV RESTY_LUA_STREAM_VERSION=$RESTY_LUA_STREAM_VERSION
 
 ## Build arguments.
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-openssl3/APKBUILD
@@ -200,7 +194,6 @@ ARG ANGIE_BUILD_OPTIONS="\
     --with-http_flv_module \
     --with-http_gunzip_module \
     --with-http_gzip_static_module \
-    --with-http_image_filter_module=dynamic \
     --with-http_mp4_module \
     --with-http_random_index_module \
     --with-http_realip_module \
@@ -211,7 +204,6 @@ ARG ANGIE_BUILD_OPTIONS="\
     --with-http_sub_module \
     --with-http_v2_module \
     --with-http_v3_module \
-    --with-http_xslt_module=dynamic \
 # Stream modules
     --with-stream \
     --with-stream_acme_module \
@@ -229,27 +221,16 @@ ARG ANGIE_BUILD_OPTIONS="\
     "
 
 ARG ANGIE_BUILD_DEPS="\
-    --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/openssl3/include -I/usr/local/pcre2/include' \
-    --with-ld-opt='-L/usr/local/openssl3/lib -L/usr/local/pcre2/lib -Wl,-rpath,/usr/local/luajit/lib:/usr/local/openssl3/lib:/usr/local/pcre2/lib -Wl,-z,relro -Wl,-z,now' \
+    --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/angie/openssl3/include -I/usr/local/angie/pcre2/include' \
+    --with-ld-opt='-L/usr/local/angie/openssl3/lib -L/usr/local/angie/pcre2/lib -Wl,-rpath,/usr/local/angie/luajit/lib:/usr/local/angie/openssl3/lib:/usr/local/angie/pcre2/lib -Wl,-z,relro -Wl,-z,now' \
     "
 
 ARG ANGIE_ADD_BUILD_OPTIONS="\
     --add-module=../ngx_devel_kit-$NGX_DEVEL_KIT_VERSION \
-    --add-module=../lua-resty-core-$RESTY_LUA_CORE_VERSION \
     --add-module=../lua-nginx-module-$RESTY_LUA_VERSION \
-    --add-module=../lua-resty-lrucache-$RESTY_LUA_LRUCACHE_VERSION \
-    --add-module=../lua-upstream-nginx-module-$RESTY_LUA_UPSTREAM_VERSION \
     --add-module=../headers-more-nginx-module-$RESTY_HEADERS_MORE_VERSION \
-    --add-module=../lua-resty-redis-$RESTY_LUA_REDIS_VERSION \
-    --add-module=../lua-resty-memcached-$RESTY_LUA_MEMCACHED_VERSION \
     --add-module=../stream-lua-nginx-module-$RESTY_LUA_STREAM_VERSION \
-    --add-module=../lua-resty-dns-$RESTY_LUA_DNS_VERSION \
-    --add-module=../lua-resty-lock-$RESTY_LUA_LOCK_VERSION \
-    --add-module=../lua-resty-balancer-$RESTY_LUA_BALANCER_VERSION \
-    --add-module=../nginx-lua-prometheus-$RESTY_LUA_PROMETHEUS_VERSION \
     "
-
-ARG ANGIE_LUAJIT_OPTIONS="--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'"
 
 RUN set -ex \
     && addgroup -g 101 -S angie \
@@ -270,9 +251,9 @@ RUN set -ex \
     && cd openssl-$ANGIE_OPENSSL_VERSION \
     && curl -fsSL https://github.com/openresty/openresty/raw/master/patches/openssl-$ANGIE_OPENSSL_PATCH_VERSION-sess_set_get_cb_yield.patch | patch -p1 \
     && eval ./config shared zlib \
-        --prefix=/usr/local/openssl3 \
+        --prefix=/usr/local/angie/openssl3 \
         --libdir=lib \
-        -Wl,-rpath,/usr/local/openssl3/lib \
+        -Wl,-rpath,/usr/local/angie/openssl3/lib \
         $ANGIE_OPENSSL_BUILD_OPTIONS \
     && make -j$(nproc) \
     && make -j$(nproc) install_sw \
@@ -280,36 +261,56 @@ RUN set -ex \
     && curl -fsSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$ANGIE_PCRE_VERSION/pcre2-$ANGIE_PCRE_VERSION.tar.gz | tar fxz - \
     && cd pcre2-$ANGIE_PCRE_VERSION \
     && CFLAGS="-g -O3" ./configure \
-        --prefix=/usr/local/pcre2 \
-        --libdir=/usr/local/pcre2/lib \
+        --prefix=/usr/local/angie/pcre2 \
+        --libdir=/usr/local/angie/pcre2/lib \
         $ANGIE_PCRE_BUILD_OPTIONS \
     && CFLAGS="-g -O3" make -j$(nproc) \
     && CFLAGS="-g -O3" make -j$(nproc) install \
     && cd /tmp \
-# install luajit.
+# install luajit and lualib.
     && curl -fsSL https://github.com/openresty/luajit2/archive/v$RESTY_LUAJIT_VERSION.tar.gz | tar fxz - \
     && cd luajit2-$RESTY_LUAJIT_VERSION \
-    && make -j$(nproc) TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/luajit \
-    && make install TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/luajit \
+    && make -j$(nproc) TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/angie/luajit \
+    && make install TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/angie/luajit \
+    && cd /tmp \
+    && curl -fsSL https://github.com/openresty/lua-resty-core/archive/v$RESTY_LUA_CORE_VERSION.tar.gz | tar fxz - \
+    && cd lua-resty-core-$RESTY_LUA_CORE_VERSION \
+    && make install LUA_LIB_DIR=$RESTY_LUALIB_PATH \
+    && cd /tmp \
+    && curl -fsSL https://github.com/openresty/lua-resty-lrucache/archive/v$RESTY_LUA_LRUCACHE_VERSION.tar.gz | tar fxz - \
+    && cd lua-resty-lrucache-$RESTY_LUA_LRUCACHE_VERSION \
+    && make install LUA_LIB_DIR=$RESTY_LUALIB_PATH \
+    && cd /tmp \
+    && curl -fsSL https://github.com/openresty/lua-resty-redis/archive/v$RESTY_LUA_REDIS_VERSION.tar.gz | tar fxz - \
+    && cd lua-resty-redis-$RESTY_LUA_REDIS_VERSION \
+    && make install LUA_LIB_DIR=$RESTY_LUALIB_PATH \
+    && cd /tmp \
+    && curl -fsSL https://github.com/openresty/lua-resty-memcached/archive/v$RESTY_LUA_MEMCACHED_VERSION.tar.gz | tar fxz - \
+    && cd lua-resty-memcached-$RESTY_LUA_MEMCACHED_VERSION \
+    && make install LUA_LIB_DIR=$RESTY_LUALIB_PATH \
+    && cd /tmp \
+    && curl -fsSL https://github.com/openresty/lua-resty-dns/archive/v$RESTY_LUA_DNS_VERSION.tar.gz | tar fxz - \
+    && cd lua-resty-dns-$RESTY_LUA_DNS_VERSION \
+    && make install LUA_LIB_DIR=$RESTY_LUALIB_PATH \
+    && cd /tmp \
+    && curl -fsSL https://github.com/openresty/lua-resty-lock/archive/v$RESTY_LUA_LOCK_VERSION.tar.gz | tar fxz - \
+    && cd lua-resty-lock-$RESTY_LUA_LOCK_VERSION \
+    && make install LUA_LIB_DIR=$RESTY_LUALIB_PATH \
+    && cd /tmp \
+    && curl -fsSL https://github.com/openresty/lua-resty-balancer/archive/v$RESTY_LUA_BALANCER_VERSION.tar.gz | tar fxz - \
+    && cd lua-resty-balancer-$RESTY_LUA_BALANCER_VERSION \
+    && make -j$(nproc) \
+    && make install LUA_LIB_DIR=$RESTY_LUALIB_PATH \
     && cd /tmp \
 # install openresty modules.
     && curl -fsSL https://github.com/vision5/ngx_devel_kit/archive/v$NGX_DEVEL_KIT_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/lua-resty-core/archive/v$RESTY_LUA_CORE_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/lua-nginx-module/archive/v$RESTY_LUA_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/lua-resty-lrucache/archive/v$RESTY_LUA_LRUCACHE_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/lua-upstream-nginx-module/archive/v$RESTY_LUA_UPSTREAM_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$RESTY_HEADERS_MORE_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/lua-resty-redis/archive/v$RESTY_LUA_REDIS_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/lua-resty-memcached/archive/v$RESTY_LUA_MEMCACHED_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/stream-lua-nginx-module/archive/v$RESTY_LUA_STREAM_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/lua-resty-dns/archive/v$RESTY_LUA_DNS_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/lua-resty-lock/archive/v$RESTY_LUA_LOCK_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/lua-resty-balancer/archive/v$RESTY_LUA_BALANCER_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/knyar/nginx-lua-prometheus/archive/$RESTY_LUA_PROMETHEUS_VERSION.tar.gz | tar fxz - \
 # run build.
     && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz - \
     && cd angie-$ANGIE_VERSION \
-    && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_ADD_BUILD_OPTIONS $ANGIE_LUAJIT_OPTIONS \
+    && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_ADD_BUILD_OPTIONS \
     && make -j$(nproc) \
     && make -j$(nproc) install \
 # https://github.com/nginx/pkg-oss/blob/master/alpine/alpine/APKBUILD-base.in
