@@ -81,11 +81,12 @@ FROM base AS dist
 
 LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
-COPY --from=deps /tmp/angie-$ANGIE_VERSION/objs/*.so /usr/lib/angie/modules/
-
 ## angie
 ARG ANGIE_VERSION="1.12.1"
 ENV ANGIE_VERSION=$ANGIE_VERSION
+
+# copy dynamic modules.
+COPY --from=deps /tmp/angie-$ANGIE_VERSION/objs/*.so /usr/lib/angie/modules/
 
 # https://github.com/openresty/ngx_devel_kit
 ARG NGX_DEVEL_KIT_VERSION="0.3.5"
