@@ -145,12 +145,19 @@ RUN set -ex \
     && rm -rf /var/cache/apk/* \
     && ln -sf /dev/stdout /var/log/angie/access.log \
     && ln -sf /dev/stderr /var/log/angie/error.log \
+# forward request and error logs to docker log collector
     && mkdir /docker-entrypoint.d
 
 # Copy nginx configuration files.
 COPY angie.conf /etc/angie/angie.conf
 COPY angie.vh.default.conf /etc/angie/conf.d/default.conf
 COPY html /usr/share/angie/html
+COPY docker-entrypoint.sh /
+COPY 10-listen-on-ipv6-by-default.sh /docker-entrypoint.d
+COPY 15-local-resolvers.envsh /docker-entrypoint.d
+COPY 20-envsubst-on-templates.sh /docker-entrypoint.d
+COPY 30-tune-worker-processes.sh /docker-entrypoint.d
+ENTRYPOINT ["/docker-entrypoint.sh"]
 
 EXPOSE 80
 
