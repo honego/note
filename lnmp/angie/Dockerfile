@@ -14,6 +14,10 @@ FROM base AS dist
 LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
 ARG ANGIE_VERSION="1.12.1"
+ARG GEOIP2_VERSION="3.4"
+ARG HEADERS_MORE_VERSION="0.40"
+ARG NJS_VERSION="1.0.0"
+ARG ZSTD_VERSION="1.5.7"
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-openssl3/APKBUILD
 ARG ANGIE_OPENSSL_VERSION="3.5.7"
@@ -91,6 +95,15 @@ ARG ANGIE_BUILD_OPTIONS="\
     --without-mail_smtp_module \
     "
 
+ARG ANGIE_DYNA_BUILD_OPTIONS="\
+    --with-compat \
+    --add-dynamic-module=../ngx_brotli \
+    --add-dynamic-module=../ngx_http_geoip2_module-$GEOIP2_VERSION \
+    --add-dynamic-module=../headers-more-nginx-module-$HEADERS_MORE_VERSION \
+    --add-dynamic-module=../njs-$NJS_VERSION/nginx \
+    --add-dynamic-module=../zstd-nginx-module \
+    "
+
 ARG ANGIE_BUILD_DEPS="\
     --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/openssl3/include -I/usr/local/pcre2/include' \
     --with-ld-opt='-L/usr/local/openssl3/lib -L/usr/local/pcre2/lib -Wl,-rpath,/usr/local/openssl3/lib:/usr/local/pcre2/lib -Wl,-z,relro -Wl,-z,now' \
@@ -102,12 +115,17 @@ RUN set -ex \
     && addgroup -g 101 -S angie \
     && adduser -S -D -H -u 101 -h /var/cache/angie -s /sbin/nologin -G angie -g angie angie \
     && apk add --no-cache --virtual .build-deps \
+        brotli-dev \
         build-base \
+        git \
         gd-dev \
         libxml2-dev \
         libxslt-dev \
+        libmaxminddb-dev \
         linux-headers \
+        lz4-dev \
         tar \
+        xz-dev \
         zlib-dev \
     && apk add --no-cache \
         curl \
@@ -124,6 +142,7 @@ RUN set -ex \
         $ANGIE_OPENSSL_BUILD_OPTIONS \
     && make -j$(nproc) \
     && make -j$(nproc) install_sw \
+    && cd /tmp \
     && curl -fsSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$ANGIE_PCRE_VERSION/pcre2-$ANGIE_PCRE_VERSION.tar.gz | tar fxz - \
     && cd pcre2-$ANGIE_PCRE_VERSION \
     && CFLAGS="-g -O3" ./configure \
@@ -133,9 +152,16 @@ RUN set -ex \
     && CFLAGS="-g -O3" make -j$(nproc) \
     && CFLAGS="-g -O3" make -j$(nproc) install \
     && cd /tmp \
+# Installing third-party modules.
+    && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
+    && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$GEOIP2_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$HEADERS_MORE_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/nginx/njs/archive/$NJS_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/facebook/zstd/releases/download/v$ZSTD_VERSION/zstd-$ZSTD_VERSION.tar.gz | tar fxz - \
+# run build.
     && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz - \
     && cd angie-$ANGIE_VERSION \
-    && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_LUAJIT_OPTIONS \
+    && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_DYNA_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_LUAJIT_OPTIONS \
     && make -j$(nproc) \
     && make -j$(nproc) install \
 # https://github.com/nginx/pkg-oss/blob/master/alpine/alpine/APKBUILD-base.in
