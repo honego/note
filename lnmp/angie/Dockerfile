@@ -257,7 +257,9 @@ RUN set -ex \
     && apk add --no-cache --virtual .build-deps \
         build-base \
         linux-headers \
+        perl-dev \
         tar \
+        zlib-dev \
     && apk add --no-cache \
         curl \
 # Add `envsubst` for templating environment variables
