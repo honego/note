@@ -39,17 +39,22 @@ ENV NGX_DEVEL_KIT_VERSION=$NGX_DEVEL_KIT_VERSION
 ARG RESTY_LUAJIT_VERSION="2.1-20260724"
 ENV RESTY_LUAJIT_VERSION=$RESTY_LUAJIT_VERSION
 
+ARG LUAJIT_LIB="/usr/local/lib"
+ENV LUAJIT_LIB=$LUAJIT_LIB
+ARG LUAJIT_INC="/usr/local/luajit/include/luajit-2.1"
+ENV LUAJIT_INC=$LUAJIT_INC
+
 # https://github.com/openresty/lua-resty-core
 ARG RESTY_LUA_CORE_VERSION="0.1.35rc1"
 ENV RESTY_LUA_CORE_VERSION=$RESTY_LUA_CORE_VERSION
 
-# https://github.com/openresty/lua-resty-lrucache
-ARG RESTY_LUA_LRUCACHE_VERSION="0.15"
-ENV RESTY_LUA_LRUCACHE_VERSION=$RESTY_LUA_LRUCACHE_VERSION
-
 # https://github.com/openresty/lua-nginx-module
 ARG RESTY_LUA_VERSION="0.10.32rc3"
 ENV RESTY_LUA_VERSION=$RESTY_LUA_VERSION
+
+# https://github.com/openresty/lua-resty-lrucache
+ARG RESTY_LUA_LRUCACHE_VERSION="0.15"
+ENV RESTY_LUA_LRUCACHE_VERSION=$RESTY_LUA_LRUCACHE_VERSION
 
 # https://github.com/openresty/lua-upstream-nginx-module
 ARG RESTY_LUA_UPSTREAM_VERSION="0.08"
@@ -166,6 +171,18 @@ ARG ANGIE_BUILD_OPTIONS="\
 
 ARG ANGIE_ADD_BUILD_OPTIONS="\
     --add-module=../ngx_devel_kit-$NGX_DEVEL_KIT_VERSION \
+    --add-module=../lua-resty-core-$RESTY_LUA_CORE_VERSION \
+    --add-module=../lua-nginx-module-$RESTY_LUA_VERSION \
+    --add-module=../lua-resty-lrucache-$RESTY_LUA_LRUCACHE_VERSION \
+    --add-module=../lua-upstream-nginx-module-$RESTY_LUA_UPSTREAM_VERSION \
+    --add-module=../headers-more-nginx-module-$RESTY_HEADERS_MORE_VERSION \
+    --add-module=../lua-resty-redis-$RESTY_LUA_REDIS_VERSION \
+    --add-module=../lua-resty-memcached-$RESTY_LUA_MEMCACHED_VERSION \
+    --add-module=../stream-lua-nginx-module-$RESTY_LUA_STREAM_VERSION \
+    --add-module=../lua-resty-dns-$RESTY_LUA_DNS_VERSION \
+    --add-module=../lua-resty-lock-$RESTY_LUA_LOCK_VERSION \
+    --add-module=../lua-resty-balancer-$RESTY_LUA_BALANCER_VERSION \
+    --add-module=../nginx-lua-prometheus-$RESTY_LUA_PROMETHEUS_VERSION \
     "
 
 ARG ANGIE_DYNA_BUILD_OPTIONS="\
@@ -231,12 +248,24 @@ RUN set -ex \
     && cd luajit2-$RESTY_LUAJIT_VERSION \
     && make -j$(nproc) TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/luajit \
     && make install TARGET_STRIP=@: CCDEBUG=-g XCFLAGS='-DLUAJIT_ENABLE_LUA52COMPAT' CC=cc PREFIX=/usr/local/luajit \
+    && cd /tmp \
 # install openresty modules.
     && curl -fsSL https://github.com/vision5/ngx_devel_kit/archive/v$NGX_DEVEL_KIT_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-resty-core/archive/v$RESTY_LUA_CORE_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-nginx-module/archive/v$RESTY_LUA_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-resty-lrucache/archive/v$RESTY_LUA_LRUCACHE_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-upstream-nginx-module/archive/v$RESTY_LUA_UPSTREAM_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$RESTY_HEADERS_MORE_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-resty-redis/archive/v$RESTY_LUA_REDIS_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-resty-memcached/archive/v$RESTY_LUA_MEMCACHED_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/stream-lua-nginx-module/archive/v$RESTY_LUA_STREAM_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-resty-dns/archive/v$RESTY_LUA_DNS_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-resty-lock/archive/v$RESTY_LUA_LOCK_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-resty-balancer/archive/v$RESTY_LUA_BALANCER_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/knyar/nginx-lua-prometheus/archive/$RESTY_LUA_PROMETHEUS_VERSION.tar.gz | tar fxz - \
 # install third-party modules.
     && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
     && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$NGX_GEOIP2_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$RESTY_HEADERS_MORE_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/nginx/njs/archive/$NGX_NJS_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/facebook/zstd/releases/download/v$NGX_ZSTD_VERSION/zstd-$NGX_ZSTD_VERSION.tar.gz | tar fxz - \
     && cd zstd-$NGX_ZSTD_VERSION \
