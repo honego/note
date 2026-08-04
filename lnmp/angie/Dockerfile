@@ -138,30 +138,37 @@ RUN set -ex \
     && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_LUAJIT_OPTIONS \
     && make -j$(nproc) \
     && make -j$(nproc) install \
-# Prepare the runtime environment
-    && apk del --no-network .build-deps \
-    && rm -f /etc/angie/*.default \
-    && mkdir -p /var/cache/angie \
-    && rm -rf /var/cache/apk/* \
+# https://github.com/nginx/pkg-oss/blob/master/alpine/alpine/APKBUILD-base.in
+    && mkdir -p /var/cache/angie /usr/share/angie \
+    && mv /etc/angie/html /usr/share/angie \
+    && ln -sf /usr/sbin/angie /usr/sbin/nginx \
+    && ln -sf /usr/lib/angie/modules /etc/angie/modules \
+    && rm -f /etc/angie/*.default /etc/angie/koi-utf /etc/angie/koi-win /etc/angie/win-utf \
+    && chown -R angie:angie /var/cache/angie /var/log/angie \
+# forward request and error logs to docker log collector
     && ln -sf /dev/stdout /var/log/angie/access.log \
     && ln -sf /dev/stderr /var/log/angie/error.log \
 # forward request and error logs to docker log collector
-    && mkdir /docker-entrypoint.d
+    && mkdir /docker-entrypoint.d \
+    && apk del --no-network .build-deps \
+    && rm -rf /var/cache/apk/* /tmp/*
 
 # Copy nginx configuration files.
+# https://github.com/nginx/pkg-oss/blob/master/alpine/alpine
 COPY angie.conf /etc/angie/angie.conf
 COPY angie.vh.default.conf /etc/angie/conf.d/default.conf
-COPY html /usr/share/angie/html
-COPY docker-entrypoint.sh /
-COPY 10-listen-on-ipv6-by-default.sh /docker-entrypoint.d
-COPY 15-local-resolvers.envsh /docker-entrypoint.d
-COPY 20-envsubst-on-templates.sh /docker-entrypoint.d
-COPY 30-tune-worker-processes.sh /docker-entrypoint.d
+
+# https://github.com/nginx/docker-nginx/tree/master/entrypoint
+COPY --chmod=755 docker-entrypoint.sh /
+COPY --chmod=755 10-listen-on-ipv6-by-default.sh /docker-entrypoint.d
+COPY --chmod=755 15-local-resolvers.envsh /docker-entrypoint.d
+COPY --chmod=755 20-envsubst-on-templates.sh /docker-entrypoint.d
+COPY --chmod=755 30-tune-worker-processes.sh /docker-entrypoint.d
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 EXPOSE 80
 
-USER angie
+USER angie:angie
 
 # https://github.com/ammnt/angie
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
