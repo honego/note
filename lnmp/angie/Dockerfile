@@ -124,6 +124,7 @@ RUN set -ex \
         libmaxminddb-dev \
         linux-headers \
         lz4-dev \
+        quickjs-dev \
         tar \
         xz-dev \
         zlib-dev \
