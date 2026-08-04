@@ -186,6 +186,8 @@ ARG ANGIE_BUILD_OPTIONS="\
     --http-uwsgi-temp-path=/var/cache/angie/uwsgi_temp \
     --http-scgi-temp-path=/var/cache/angie/scgi_temp \
 # Features and dependencies
+    --without-select_module \
+    --without-poll_module \
     --with-threads \
     --with-file-aio \
     --with-pcre \
