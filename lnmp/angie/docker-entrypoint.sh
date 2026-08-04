@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (c) 2011-2023 F5, Inc.
+# Copyright (c) 2011-2026 Nginx, Inc.
 # Copyright (c) 2025-2026 honeok <i@honeok.com>
 #
 # Based on the NGINX Docker entrypoint script, modified for Angie.
