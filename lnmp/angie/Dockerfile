@@ -152,12 +152,18 @@ RUN set -ex \
     && CFLAGS="-g -O3" make -j$(nproc) \
     && CFLAGS="-g -O3" make -j$(nproc) install \
     && cd /tmp \
-# Installing third-party modules.
+# install third-party modules.
     && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
     && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$GEOIP2_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$HEADERS_MORE_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/nginx/njs/archive/$NJS_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/facebook/zstd/releases/download/v$ZSTD_VERSION/zstd-$ZSTD_VERSION.tar.gz | tar fxz - \
+    && cd zstd-$ZSTD_VERSION \
+    && make clean \
+    && CFLAGS="-fPIC" make -j$(nproc) \
+    && make -j$(nproc) install \
+    && cd /tmp \
+    && git clone --depth=10 https://github.com/tokers/zstd-nginx-module.git \
 # run build.
     && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz - \
     && cd angie-$ANGIE_VERSION \
