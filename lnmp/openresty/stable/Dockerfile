@@ -243,8 +243,8 @@ RUN set -ex \
     && apk del --no-network .build-deps \
     && rm -rf /var/cache/apk/* /tmp/*
 
-# Add additional binaries into PATH for convenience.
-ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
+# Add openresty utilities and LuaJIT binaries into PATH.
+ENV PATH=$PATH:/usr/local/openresty/bin:/usr/local/openresty/luajit/bin
 
 # Copy nginx configuration files.
 COPY nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
@@ -256,7 +256,6 @@ ENTRYPOINT ["/docker-entrypoint.sh"]
 EXPOSE 80
 
 # Use SIGQUIT instead of default SIGTERM to cleanly drain requests.
-# See https://github.com/openresty/docker-openresty/blob/master/README.md#tips--pitfalls
 # See https://github.com/nginx/docker-nginx/issues/377
 STOPSIGNAL SIGQUIT
 
