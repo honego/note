@@ -35,11 +35,11 @@ ARG RESTY_PCRE_BUILD_OPTIONS="\
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty/APKBUILD
 ARG RESTY_CONFIG_OPTIONS="\
 # options directly inherited from nginx.
-    --prefix=/etc/nginx \
+    --prefix=/usr/local/openresty \
     --sbin-path=/usr/sbin/openresty \
-    --modules-path=/usr/lib/nginx/modules \
+    --modules-path=/usr/lib/openresty/modules \
     --conf-path=/etc/nginx/nginx.conf \
-    --error-log-path=/var/log/nginx/error.log \
+    --error-log-path=/var/log/openresty/error.log \
     --pid-path=/run/nginx.pid \
     --lock-path=/run/nginx.lock \
     --user=nginx \
@@ -65,7 +65,7 @@ ARG RESTY_CONFIG_OPTIONS="\
     --with-http_degradation_module \
     --with-http_slice_module \
     --with-http_stub_status_module \
-    --http-log-path=/var/log/nginx/access.log \
+    --http-log-path=/var/log/openresty/access.log \
     --http-client-body-temp-path=/var/cache/openresty/client_temp \
     --http-proxy-temp-path=/var/cache/openresty/proxy_temp \
     --http-fastcgi-temp-path=/var/cache/openresty/fastcgi_temp \
@@ -80,8 +80,13 @@ ARG RESTY_CONFIG_OPTIONS="\
     --without-lua_rds_parser \
     "
 
-ARG RESTY_LUAJIT_OPTIONS="--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'"
-ARG RESTY_PCRE_OPTIONS="--with-pcre-jit"
+ARG RESTY_LUAJIT_OPTIONS="\
+    --with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT' \
+    "
+
+ARG RESTY_PCRE_OPTIONS="\
+    --with-pcre-jit \
+    "
 
 # These are not intended to be user-specified
 ARG RESTY_CONFIG_DEPS="\
@@ -152,7 +157,7 @@ RUN set -ex \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install \
 ##############################
-    && if [ -n "${RESTY_STRIP_BINARIES}" ]; then \
+    && if [ -n $RESTY_STRIP_BINARIES ]; then \
         rm -Rf /usr/local/openresty/openssl3/bin/c_rehash /usr/local/openresty/openssl3/lib/*.a /usr/local/openresty/openssl3/include \
         && find /usr/local/openresty/openssl3 -type f -perm -u+x -exec strip --strip-unneeded '{}' \; \
         && rm -Rf /usr/local/openresty/pcre2/bin /usr/local/openresty/pcre2/share \
@@ -162,7 +167,7 @@ RUN set -ex \
         && find /usr/local/openresty/nginx -type f -perm -u+x -exec strip --strip-unneeded '{}' \; ; \
     fi \
     && rm -f /usr/local/openresty/nginx/conf/*.default \
-    && runDeps="$( \
+    && rundeps="$( \
         scanelf --needed --nobanner --format '%n#p' \
             /usr/local/openresty/nginx/sbin/nginx \
             /usr/local/openresty/nginx/modules/*.so \
@@ -182,7 +187,7 @@ RUN set -ex \
             echo "so:$so"; \
         done \
     )" \
-    && apk add --no-cache --virtual .runDeps $runDeps \
+    && apk add --no-cache --virtual .rundeps $rundeps \
     && rm -rf /tmp/* \
     && apk del --no-network .build-deps \
 # Temporary file cache directory.
