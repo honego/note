@@ -140,7 +140,7 @@ ARG RESTY_LUA_VERSION="0.10.32rc3"
 ENV RESTY_LUA_VERSION=$RESTY_LUA_VERSION
 
 # https://github.com/openresty/lua-upstream-nginx-module
-ARG RESTY_LUA_UPSTREAM_VERSION="0.07"
+ARG RESTY_LUA_UPSTREAM_VERSION="0.08"
 ENV RESTY_LUA_UPSTREAM_VERSION=$RESTY_LUA_UPSTREAM_VERSION
 
 # https://github.com/openresty/headers-more-nginx-module
