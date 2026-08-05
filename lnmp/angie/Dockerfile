@@ -52,8 +52,6 @@ ARG ANGIE_BUILD_OPTIONS="\
     --without-poll_module \
     --with-threads \
     --with-file-aio \
-    --with-pcre \
-    --with-pcre-jit \
     --with-http_acme_module \
     --with-http_addition_module \
     --with-http_auth_request_module \
