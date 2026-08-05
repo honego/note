@@ -7,66 +7,11 @@
 
 FROM alpine:3.24.1@sha256:28bd5fe8b56d1bd048e5babf5b10710ebe0bae67db86916198a6eec434943f8b AS base
 
-FROM base AS builder
+FROM base AS dist
 
 LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
-ARG RESTY_VERSION
-ARG GEOIP2_VERSION=""
-ARG ZSTD_VERSION=""
-ARG ACME_VERSION=""
-
-ARG NGX_DYNAMIC_MODULE_ARGS="\
-    --with-compat \
-    --with-stream \
-    --add-dynamic-module=../ngx_brotli \
-    --add-dynamic-module=../zstd-nginx-module \
-    --add-dynamic-module=../nginx-acme-${ACME_VERSION} \
-    --add-dynamic-module=../ngx_http_geoip2_module-${GEOIP2_VERSION} \
-    "
-
-RUN set -ex \
-    && apk add --update --no-cache --virtual .build-deps \
-        brotli-dev \
-        build-base \
-        cargo \
-        clang-dev \
-        curl \
-        git \
-        libmaxminddb-dev \
-        linux-headers \
-        lz4-dev \
-        openssl-dev \
-        pcre2-dev \
-        perl-dev \
-        rust \
-        xz-dev \
-        zlib-dev \
-    && cd /tmp \
-    && curl -Ls https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz  \
-    && tar fxz openresty-${RESTY_VERSION}.tar.gz \
-    && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
-    && curl -Ls https://github.com/facebook/zstd/releases/download/v${ZSTD_VERSION}/zstd-${ZSTD_VERSION}.tar.gz -o zstd-${ZSTD_VERSION}.tar.gz \
-    && tar fxz zstd-${ZSTD_VERSION}.tar.gz \
-    && cd zstd-${ZSTD_VERSION} \
-    && make clean \
-    && CFLAGS="-fPIC" make -j$(getconf _NPROCESSORS_ONLN) \
-    && make -j$(getconf _NPROCESSORS_ONLN) install \
-    && cd /tmp \
-    && git clone --depth=10 https://github.com/tokers/zstd-nginx-module.git \
-    && curl -Ls https://github.com/nginx/nginx-acme/releases/download/v${ACME_VERSION}/nginx-acme-${ACME_VERSION}.tar.gz -o nginx-acme-${ACME_VERSION}.tar.gz \
-    && tar fxz nginx-acme-${ACME_VERSION}.tar.gz \
-    && curl -Ls https://github.com/leev/ngx_http_geoip2_module/archive/${GEOIP2_VERSION}.tar.gz -o geoip2-${GEOIP2_VERSION}.tar.gz \
-    && tar fxz geoip2-${GEOIP2_VERSION}.tar.gz \
-    && cd openresty-${RESTY_VERSION} \
-    && eval ./configure ${NGX_DYNAMIC_MODULE_ARGS} \
-    && make \
-    && strip build/nginx-*/objs/*.so \
-    && apk del --no-network .build-deps \
-    && rm -rf /var/cache/apk/*
-
-FROM base AS dist
-
+# openresty version.
 ARG RESTY_VERSION=1.31.1.1
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-zlib/APKBUILD
@@ -89,10 +34,12 @@ ARG RESTY_PCRE_BUILD_OPTIONS="\
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty/APKBUILD
 ARG RESTY_CONFIG_OPTIONS="\
-    --without-http_rds_json_module \
-    --without-http_rds_csv_module \
-    --with-http_iconv_module \
-    --without-lua_rds_parser \
+# options directly inherited from nginx.
+    --prefix=/etc/nginx \
+    --sbin-path=/usr/sbin/openresty \
+    --modules-path=/usr/lib/nginx/modules \
+    --conf-path=/etc/nginx/nginx.conf \
+    --error-log-path=/var/log/nginx/error.log \
     --pid-path=/run/nginx.pid \
     --lock-path=/run/nginx.lock \
     --user=nginx \
@@ -106,9 +53,6 @@ ARG RESTY_CONFIG_OPTIONS="\
     --with-http_v3_module \
     --with-http_realip_module \
     --with-http_addition_module \
-    --with-http_xslt_module=dynamic \
-    --with-http_image_filter_module=dynamic \
-    --with-http_geoip_module=dynamic \
     --with-http_sub_module \
     --with-http_dav_module \
     --with-http_flv_module \
@@ -121,48 +65,32 @@ ARG RESTY_CONFIG_OPTIONS="\
     --with-http_degradation_module \
     --with-http_slice_module \
     --with-http_stub_status_module \
-    --with-md5-asm \
-    --with-sha1-asm \
+    --http-log-path=/var/log/nginx/access.log \
     --http-client-body-temp-path=/var/cache/openresty/client_temp \
     --http-proxy-temp-path=/var/cache/openresty/proxy_temp \
     --http-fastcgi-temp-path=/var/cache/openresty/fastcgi_temp \
     --http-uwsgi-temp-path=/var/cache/openresty/uwsgi_temp \
     --http-scgi-temp-path=/var/cache/openresty/scgi_temp \
-    --with-mail \
-    --with-mail_ssl_module \
-    --without-mail_pop3_module \
-    --without-mail_imap_module \
-    --without-mail_smtp_module \
-    --with-stream \
     --with-stream_ssl_module \
     --with-stream_realip_module \
-    --with-stream_geoip_module \
     --with-stream_ssl_preread_module \
-    --with-compat \
+# openresty specific options.
+    --without-http_rds_json_module \
+    --without-http_rds_csv_module \
+    --without-lua_rds_parser \
     "
 
-ARG RESTY_CONFIG_OPTIONS_MORE=""
 ARG RESTY_LUAJIT_OPTIONS="--with-luajit-xcflags='-DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT'"
 ARG RESTY_PCRE_OPTIONS="--with-pcre-jit"
 
-ARG RESTY_ADD_PACKAGE_BUILDDEPS=""
-ARG RESTY_ADD_PACKAGE_RUNDEPS=""
-# ARG RESTY_EVAL_PRE_CONFIGURE=""
-# ARG RESTY_EVAL_POST_DOWNLOAD_PRE_CONFIGURE=""
-# ARG RESTY_EVAL_PRE_MAKE=""
-# ARG RESTY_EVAL_POST_MAKE=""
-
-ARG RESTY_STRIP_BINARIES=""
-
 # These are not intended to be user-specified
-ARG RESTY_CONFIG_DEPS="--with-pcre \
-    --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/openresty/pcre2/include -I/usr/local/openresty/openssl3/include' \
-    --with-ld-opt='-L/usr/local/openresty/pcre2/lib -L/usr/local/openresty/openssl3/lib -Wl,-rpath,/usr/local/openresty/pcre2/lib:/usr/local/openresty/openssl3/lib' \
+ARG RESTY_CONFIG_DEPS="\
+    --with-pcre \
+    --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/openresty/zlib/include -I/usr/local/openresty/openssl3/include -I/usr/local/openresty/pcre2/include' \
+    --with-ld-opt='-L/usr/local/openresty/zlib/lib -L/usr/local/openresty/openssl3/lib -L/usr/local/openresty/pcre2/lib -Wl,-rpath,/usr/local/openresty/zlib/lib:/usr/local/openresty/openssl3/lib:/usr/local/openresty/pcre2/lib' \
     "
 
-LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
-
-COPY --from=builder /tmp/openresty-${RESTY_VERSION}/build/nginx-*/objs/*.so /usr/local/openresty/nginx/modules/
+ARG RESTY_STRIP_BINARIES=
 
 RUN set -ex \
     && addgroup -g 101 -S nginx \
@@ -220,9 +148,9 @@ RUN set -ex \
     && cd /tmp \
     && curl -fsSL https://openresty.org/download/openresty-$RESTY_VERSION.tar.gz | tar fxz - \
     && cd openresty-$RESTY_VERSION \
-    && eval ./configure -j$(getconf _NPROCESSORS_ONLN) ${RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
+    && eval ./configure -j$(getconf _NPROCESSORS_ONLN) $RESTY_CONFIG_OPTIONS $RESTY_LUAJIT_OPTIONS $RESTY_PCRE_OPTIONS $RESTY_CONFIG_DEPS \
     && make -j$(getconf _NPROCESSORS_ONLN) \
-    && make -j$(getconf _NPROCESSORS_ONLN) install \
+    && make install \
 ##############################
     && if [ -n "${RESTY_STRIP_BINARIES}" ]; then \
         rm -Rf /usr/local/openresty/openssl3/bin/c_rehash /usr/local/openresty/openssl3/lib/*.a /usr/local/openresty/openssl3/include \
