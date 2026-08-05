@@ -67,7 +67,7 @@ RUN set -ex \
 
 FROM base AS dist
 
-ARG RESTY_VERSION=
+ARG RESTY_VERSION=1.31.1.1
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-zlib/APKBUILD
 ARG RESTY_ZLIB_VERSION=1.3.2
@@ -75,14 +75,12 @@ ARG RESTY_ZLIB_VERSION=1.3.2
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-openssl3/APKBUILD
 ARG RESTY_OPENSSL_VERSION=3.5.7
 ARG RESTY_OPENSSL_PATCH_VERSION=3.5.5
-ARG RESTY_OPENSSL_BASE_URL="https://github.com/openssl/openssl/releases/download/openssl-$RESTY_OPENSSL_VERSION"
 ARG RESTY_OPENSSL_BUILD_OPTIONS="\
     enable-camellia enable-cms enable-fips enable-ktls enable-md2 enable-rc5 enable-rfc3779 enable-seed enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers \
     "
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-pcre2/APKBUILD
 ARG RESTY_PCRE_VERSION="10.47"
-ARG RESTY_PCRE_BASE_URL="https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$RESTY_PCRE_VERSION"
 ARG RESTY_PCRE_BUILD_OPTIONS="\
     --disable-bsr-anycrlf --disable-coverage --disable-ebcdic --disable-fuzz-support --disable-jit-sealloc --disable-never-backslash-C --disable-pcre2grep-libbz2 --disable-pcre2grep-libz \
     --disable-pcre2test-libedit --disable-rebuild-chartables --disable-silent-rules --disable-static --disable-valgrind --enable-jit --enable-newline-is-lf --enable-pcre2-8 --enable-pcre2-16 \
@@ -192,9 +190,7 @@ RUN set -ex \
 ##############################
 # Build openssl.
     && cd /tmp \
-    && curl -fsSL $RESTY_OPENSSL_BASE_URL/openssl-$RESTY_OPENSSL_VERSION.tar.gz -o openssl-$RESTY_OPENSSL_VERSION.tar.gz \
-    && curl -fsSL $RESTY_OPENSSL_BASE_URL/openssl-$RESTY_OPENSSL_VERSION.tar.gz.sha256 | sha256sum -c - \
-    && tar fxz openssl-$RESTY_OPENSSL_VERSION.tar.gz \
+    && curl -fsSL https://github.com/openssl/openssl/releases/download/openssl-$RESTY_OPENSSL_VERSION/openssl-$RESTY_OPENSSL_VERSION.tar.gz | tar fxz - \
     && cd openssl-$RESTY_OPENSSL_VERSION \
     && curl -fsSL https://github.com/openresty/openresty/raw/master/patches/openssl-$RESTY_OPENSSL_PATCH_VERSION-sess_set_get_cb_yield.patch | patch -p1 \
     && ./config \
@@ -210,7 +206,7 @@ RUN set -ex \
 ##############################
 # Build pcre2.
     && cd /tmp \
-    && curl -fsSL $RESTY_PCRE_BASE_URL/pcre2-$RESTY_PCRE_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$RESTY_PCRE_VERSION/pcre2-$RESTY_PCRE_VERSION.tar.gz | tar fxz - \
     && cd pcre2-$RESTY_PCRE_VERSION \
     && CFLAGS="-g -O3" ./configure \
         --prefix=/usr/local/openresty/pcre2 \
