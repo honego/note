@@ -157,48 +157,91 @@ RUN set -ex \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install \
 ##############################
-    && if [ -n $RESTY_STRIP_BINARIES ]; then \
-        rm -Rf /usr/local/openresty/openssl3/bin/c_rehash /usr/local/openresty/openssl3/lib/*.a /usr/local/openresty/openssl3/include \
-        && find /usr/local/openresty/openssl3 -type f -perm -u+x -exec strip --strip-unneeded '{}' \; \
-        && rm -Rf /usr/local/openresty/pcre2/bin /usr/local/openresty/pcre2/share \
-        && find /usr/local/openresty/pcre2 -type f -perm -u+x -exec strip --strip-unneeded '{}' \; \
-        && rm -Rf /usr/local/openresty/luajit/lib/*.a /usr/local/openresty/luajit/share/man \
-        && find /usr/local/openresty/luajit -type f -perm -u+x -exec strip --strip-unneeded '{}' \; \
-        && find /usr/local/openresty/nginx -type f -perm -u+x -exec strip --strip-unneeded '{}' \; ; \
+# https://github.com/nginx/pkg-oss/blob/master/alpine/alpine/APKBUILD-base.in
+    && mkdir -p \
+        /var/cache/openresty \
+        /usr/share/openresty \
+        /usr/lib/openresty/modules \
+    && mv \
+        /usr/local/openresty/nginx/html \
+        /usr/share/openresty/html \
+    && ln -sf /usr/lib/openresty/modules /etc/nginx/modules \
+    && ln -sf /usr/sbin/openresty /usr/sbin/nginx \
+    && rm -rf /etc/nginx/*.default \
+    && rm -f \
+        /etc/nginx/koi-utf \
+        /etc/nginx/koi-win \
+        /etc/nginx/win-utf \
+##############################
+# forward request and error logs to docker log collector
+    && ln -sf /dev/stdout /var/log/openresty/access.log \
+    && ln -sf /dev/stderr /var/log/openresty/error.log \
+# create a docker-entrypoint.d directory
+    && mkdir /docker-entrypoint.d \
+    && if [ -n "$RESTY_STRIP_BINARIES" ]; then \
+        rm -rf \
+            /usr/local/openresty/zlib/include \
+            /usr/local/openresty/zlib/lib/*.a \
+            /usr/local/openresty/zlib/lib/*.la \
+            /usr/local/openresty/zlib/share \
+            /usr/local/openresty/openssl3/bin/c_rehash \
+            /usr/local/openresty/openssl3/include \
+            /usr/local/openresty/openssl3/lib/*.a \
+            /usr/local/openresty/openssl3/lib/*.la \
+            /usr/local/openresty/pcre2/bin \
+            /usr/local/openresty/pcre2/include \
+            /usr/local/openresty/pcre2/lib/*.a \
+            /usr/local/openresty/pcre2/lib/*.la \
+            /usr/local/openresty/pcre2/share \
+            /usr/local/openresty/luajit/lib/*.a \
+            /usr/local/openresty/luajit/share/man \
+        && strip --strip-unneeded /usr/sbin/openresty \
+        && find \
+            /usr/local/openresty/zlib/lib \
+            /usr/local/openresty/openssl3/lib \
+            /usr/local/openresty/pcre2/lib \
+            /usr/local/openresty/luajit/lib \
+            /usr/local/openresty/lualib \
+            /usr/lib/openresty/modules \
+            -type f \( -name '*.so' -o -name '*.so.*' \) \
+            -exec strip --strip-unneeded '{}' \; \
+        && find \
+            /usr/local/openresty/openssl3/bin \
+            /usr/local/openresty/luajit/bin \
+            -type f \
+            -exec strip --strip-unneeded '{}' \; \
+        ; \
     fi \
-    && rm -f /usr/local/openresty/nginx/conf/*.default \
     && rundeps="$( \
-        scanelf --needed --nobanner --format '%n#p' \
-            /usr/local/openresty/nginx/sbin/nginx \
-            /usr/local/openresty/nginx/modules/*.so \
-            /usr/local/openresty/luajit/bin/* \
+        { \
+            scanelf --needed --nobanner --format '%n#p' \
+                /usr/sbin/openresty; \
+            scanelf --needed --nobanner --format '%n#p' \
+                --recursive /usr/local/openresty; \
+            if [ -d /usr/lib/openresty/modules ]; then \
+                scanelf --needed --nobanner --format '%n#p' \
+                    --recursive /usr/lib/openresty/modules; \
+            fi; \
+        } \
         | tr ',' '\n' \
         | sort -u \
-        | while read -r so; do \
-            [ -z "$so" ] && continue; \
+        | while IFS= read -r so; do \
+            [ -n "$so" ] || continue; \
             for libdir in \
+                /usr/local/lib \
+                /usr/local/openresty/zlib/lib \
                 /usr/local/openresty/openssl3/lib \
                 /usr/local/openresty/pcre2/lib \
                 /usr/local/openresty/luajit/lib \
-                /usr/local/lib \
             ; do \
                 [ -e "$libdir/$so" ] && continue 2; \
             done; \
-            echo "so:$so"; \
+            printf 'so:%s\n' "$so"; \
         done \
     )" \
     && apk add --no-cache --virtual .rundeps $rundeps \
-    && rm -rf /tmp/* \
     && apk del --no-network .build-deps \
-# Temporary file cache directory.
-    && mkdir -p /var/cache/openresty \
-# If we have leftovers from building, let's purge them (including extra, unnecessary build deps)
-    && rm -rf /var/cache/apk/* \
-# Forward request and error logs to docker log collector.
-    && ln -sf /dev/stdout /usr/local/openresty/nginx/logs/access.log \
-    && ln -sf /dev/stderr /usr/local/openresty/nginx/logs/error.log \
-# Create a docker-entrypoint.d directory
-    && mkdir /docker-entrypoint.d
+    && rm -rf /var/cache/apk/* /tmp/*
 
 # Add additional binaries into PATH for convenience.
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
