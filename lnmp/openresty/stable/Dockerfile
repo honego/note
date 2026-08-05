@@ -11,7 +11,7 @@ FROM base AS builder
 
 LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
-ARG RESTY_VERSION=""
+ARG RESTY_VERSION
 ARG GEOIP2_VERSION=""
 ARG ZSTD_VERSION=""
 ARG ACME_VERSION=""
@@ -67,14 +67,17 @@ RUN set -ex \
 
 FROM base AS dist
 
-ARG RESTY_VERSION=""
+ARG RESTY_VERSION=
+
+# https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-zlib/APKBUILD
+ARG RESTY_ZLIB_VERSION=1.3.2
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-openssl3/APKBUILD
-ARG RESTY_OPENSSL_VERSION="3.5.7"
-ARG RESTY_OPENSSL_PATCH_VERSION="3.5.5"
-ARG RESTY_OPENSSL_URL_BASE="https://github.com/openssl/openssl/releases/download/openssl-${RESTY_OPENSSL_VERSION}"
-ARG RESTY_OPENSSL_BUILD_OPTIONS="enable-camellia enable-seed enable-rfc3779 enable-cms enable-md2 enable-rc5 \
-    enable-weak-ssl-ciphers enable-ssl3 enable-ssl3-method enable-md2 enable-ktls enable-fips \
+ARG RESTY_OPENSSL_VERSION=3.5.7
+ARG RESTY_OPENSSL_PATCH_VERSION=3.5.5
+ARG RESTY_OPENSSL_BASE_URL="https://github.com/openssl/openssl/releases/download/openssl-$RESTY_OPENSSL_VERSION"
+ARG RESTY_OPENSSL_BUILD_OPTIONS="\
+    enable-camellia enable-cms enable-fips enable-ktls enable-md2 enable-rc5 enable-rfc3779 enable-seed enable-ssl3 enable-ssl3-method enable-weak-ssl-ciphers \
     "
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-pcre2/APKBUILD
@@ -166,37 +169,45 @@ COPY --from=builder /tmp/openresty-${RESTY_VERSION}/build/nginx-*/objs/*.so /usr
 RUN set -ex \
     && addgroup -g 101 -S nginx \
     && adduser -S -D -H -u 101 -h /var/cache/openresty -s /sbin/nologin -G nginx -g nginx nginx \
-    && apk add --update --no-cache --virtual .build-deps \
-        brotli-dev \
+    && apk add --no-cache --virtual .build-deps \
         build-base \
-        coreutils \
-        gd-dev \
-        geoip-dev \
-        libxslt-dev \
         linux-headers \
         perl-dev \
-        readline-dev \
-        zlib-dev \
-        ${RESTY_ADD_PACKAGE_BUILDDEPS} \
+        tar \
     && apk add --no-cache \
         curl \
         gettext-envsubst \
         tzdata \
-        ${RESTY_ADD_PACKAGE_RUNDEPS} \
+##############################
+# Build zlib.
     && cd /tmp \
-    && curl -Ls "${RESTY_OPENSSL_URL_BASE}/openssl-${RESTY_OPENSSL_VERSION}.tar.gz" -o openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
-    && tar fxz openssl-${RESTY_OPENSSL_VERSION}.tar.gz \
-    && cd openssl-${RESTY_OPENSSL_VERSION} \
-# Patching openssl 3.x for openresty
-    && curl -Ls https://github.com/openresty/openresty/raw/master/patches/openssl-${RESTY_OPENSSL_PATCH_VERSION}-sess_set_get_cb_yield.patch | patch -p1 \
+    && curl -fsSL https://github.com/madler/zlib/releases/download/v$RESTY_ZLIB_VERSION/zlib-$RESTY_ZLIB_VERSION.tar.gz | tar fxz - \
+    && cd zlib-$RESTY_ZLIB_VERSION \
+    && ./configure \
+        --prefix=/usr/local/openresty/zlib \
+    && make -j$(getconf _NPROCESSORS_ONLN) \
+        CFLAGS='-O3 -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN -g3' \
+        SFLAGS='-O3 -fPIC -D_LARGEFILE64_SOURCE=1 -DHAVE_HIDDEN -g3' \
+    && make install \
+##############################
+# Build openssl.
+    && cd /tmp \
+    && curl -fsSL $RESTY_OPENSSL_BASE_URL/openssl-$RESTY_OPENSSL_VERSION.tar.gz -o openssl-$RESTY_OPENSSL_VERSION.tar.gz \
+    && curl -fsSL $RESTY_OPENSSL_BASE_URL/openssl-$RESTY_OPENSSL_VERSION.tar.gz.sha256 | sha256sum -c - \
+    && tar fxz openssl-$RESTY_OPENSSL_VERSION.tar.gz \
+    && cd openssl-$RESTY_OPENSSL_VERSION \
+    && curl -fsSL https://github.com/openresty/openresty/raw/master/patches/openssl-$RESTY_OPENSSL_PATCH_VERSION-sess_set_get_cb_yield.patch | patch -p1 \
     && ./config \
         shared zlib -g \
         --prefix=/usr/local/openresty/openssl3 \
         --libdir=lib \
-        -Wl,-rpath,/usr/local/openresty/openssl3/lib \
-        ${RESTY_OPENSSL_BUILD_OPTIONS} \
+        -I/usr/local/openresty/zlib/include \
+        -L/usr/local/openresty/zlib/lib \
+        -Wl,-rpath,/usr/local/openresty/zlib/lib:/usr/local/openresty/openssl3/lib \
+        $RESTY_OPENSSL_BUILD_OPTIONS \
     && make -j$(getconf _NPROCESSORS_ONLN) \
-    && make -j$(getconf _NPROCESSORS_ONLN) install_sw \
+    && make install_sw \
+##############################
     && cd /tmp \
     && curl -Ls https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${RESTY_PCRE_VERSION}/pcre2-${RESTY_PCRE_VERSION}.tar.gz -o pcre2-${RESTY_PCRE_VERSION}.tar.gz \
     && echo "${RESTY_PCRE_SHA256}  pcre2-${RESTY_PCRE_VERSION}.tar.gz" | shasum -a 256 --check \
