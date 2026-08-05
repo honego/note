@@ -82,11 +82,12 @@ ARG RESTY_OPENSSL_BUILD_OPTIONS="\
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty-pcre2/APKBUILD
 ARG RESTY_PCRE_VERSION="10.47"
-ARG RESTY_PCRE_SHA256="c08ae2388ef333e8403e670ad70c0a11f1eed021fd88308d7e02f596fcd9dc16"
-ARG RESTY_PCRE_BUILD_OPTIONS="--enable-jit --enable-pcre2grep-jit --disable-bsr-anycrlf --disable-coverage --disable-ebcdic --disable-fuzz-support \
-    --disable-jit-sealloc --disable-never-backslash-C --enable-newline-is-lf --enable-pcre2-8 --enable-pcre2-16 --enable-pcre2-32 \
-    --enable-pcre2grep-callout --enable-pcre2grep-callout-fork --disable-pcre2grep-libbz2 --disable-pcre2grep-libz --disable-pcre2test-libedit \
-    --enable-percent-zt --disable-rebuild-chartables --enable-shared --disable-static --disable-silent-rules --enable-unicode --disable-valgrind \
+ARG RESTY_PCRE_BASE_URL="https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$RESTY_PCRE_VERSION"
+ARG RESTY_PCRE_BUILD_OPTIONS="\
+    --disable-bsr-anycrlf --disable-coverage --disable-ebcdic --disable-fuzz-support --disable-jit-sealloc --disable-never-backslash-C \
+    --disable-pcre2grep-libbz2 --disable-pcre2grep-libz --disable-pcre2test-libedit --disable-rebuild-chartables --disable-silent-rules --disable-static \
+    --disable-valgrind --enable-jit --enable-newline-is-lf --enable-pcre2-8 --enable-pcre2-16 --enable-pcre2-32 --enable-pcre2grep-callout \
+    --enable-pcre2grep-callout-fork --enable-pcre2grep-jit --enable-percent-zt --enable-shared --enable-unicode \
     "
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty/APKBUILD
@@ -208,17 +209,17 @@ RUN set -ex \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install_sw \
 ##############################
+# Build pcre2.
     && cd /tmp \
-    && curl -Ls https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${RESTY_PCRE_VERSION}/pcre2-${RESTY_PCRE_VERSION}.tar.gz -o pcre2-${RESTY_PCRE_VERSION}.tar.gz \
-    && echo "${RESTY_PCRE_SHA256}  pcre2-${RESTY_PCRE_VERSION}.tar.gz" | shasum -a 256 --check \
-    && tar fxz pcre2-${RESTY_PCRE_VERSION}.tar.gz \
-    && cd pcre2-${RESTY_PCRE_VERSION} \
+    && curl -fsSL $RESTY_PCRE_BASE_URL/pcre2-$RESTY_PCRE_VERSION.tar.gz | tar fxz - \
+    && cd pcre2-$RESTY_PCRE_VERSION \
     && CFLAGS="-g -O3" ./configure \
         --prefix=/usr/local/openresty/pcre2 \
         --libdir=/usr/local/openresty/pcre2/lib \
-        ${RESTY_PCRE_BUILD_OPTIONS} \
+        $RESTY_PCRE_BUILD_OPTIONS \
     && CFLAGS="-g -O3" make -j$(getconf _NPROCESSORS_ONLN) \
-    && CFLAGS="-g -O3" make -j$(getconf _NPROCESSORS_ONLN) install \
+    && CFLAGS="-g -O3" make install \
+##############################
     && cd /tmp \
     && curl -Ls https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
     && tar fxz openresty-${RESTY_VERSION}.tar.gz \
