@@ -91,8 +91,14 @@ ARG RESTY_PCRE_OPTIONS="\
 # These are not intended to be user-specified
 ARG RESTY_CONFIG_DEPS="\
     --with-pcre \
-    --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC -I/usr/local/openresty/zlib/include -I/usr/local/openresty/openssl3/include -I/usr/local/openresty/pcre2/include' \
-    --with-ld-opt='-L/usr/local/openresty/zlib/lib -L/usr/local/openresty/openssl3/lib -L/usr/local/openresty/pcre2/lib -Wl,-rpath,/usr/local/openresty/zlib/lib:/usr/local/openresty/openssl3/lib:/usr/local/openresty/pcre2/lib' \
+    --with-cc-opt='-DNGX_LUA_ABORT_AT_PANIC \
+        -I/usr/local/openresty/zlib/include \
+        -I/usr/local/openresty/openssl3/include \
+        -I/usr/local/openresty/pcre2/include' \
+    --with-ld-opt='-L/usr/local/openresty/zlib/lib \
+        -L/usr/local/openresty/openssl3/lib \
+        -L/usr/local/openresty/pcre2/lib \
+        -Wl,-rpath,/usr/local/openresty/zlib/lib:/usr/local/openresty/openssl3/lib:/usr/local/openresty/pcre2/lib' \
     "
 
 ARG RESTY_STRIP_BINARIES=
