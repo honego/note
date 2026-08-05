@@ -115,9 +115,9 @@ RUN set -ex \
     && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
     && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$NGX_GEOIP2_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$HEADERS_MORE_VERSION.tar.gz | tar fxz - \
+# https://github.com/facebook/zstd/blob/dev/lib/libzstd.mk
     && curl -fsSL https://github.com/facebook/zstd/releases/download/v$NGX_ZSTD_VERSION/zstd-$NGX_ZSTD_VERSION.tar.gz | tar fxz - \
     && make -j$(getconf _NPROCESSORS_ONLN) -C zstd-$NGX_ZSTD_VERSION/lib \
-# https://github.com/facebook/zstd/blob/dev/lib/libzstd.mk
         MOREFLAGS="-fPIC" libzstd.a \
     && export ZSTD_INC="/tmp/zstd-$NGX_ZSTD_VERSION/lib" \
     && export ZSTD_LIB="/tmp/zstd-$NGX_ZSTD_VERSION/lib" \
