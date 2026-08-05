@@ -130,11 +130,18 @@ RUN set -ex \
     && make -j$(nproc) \
     && make -j$(nproc) install \
 # https://github.com/nginx/pkg-oss/blob/master/alpine/alpine/APKBUILD-base.in
-    && mkdir -p /var/cache/angie /usr/share/angie \
+    && mkdir -p \
+        /var/cache/angie \
+        /usr/share/angie \
+        /usr/lib/angie/modules \
     && mv /etc/angie/html /usr/share/angie \
-    && ln -sf /usr/sbin/angie /usr/sbin/nginx \
     && ln -sf /usr/lib/angie/modules /etc/angie/modules \
-    && rm -f /etc/angie/*.default /etc/angie/koi-utf /etc/angie/koi-win /etc/angie/win-utf \
+    && ln -sf /usr/sbin/angie /usr/sbin/nginx \
+    && rm -rf ./etc/nginx/*.default \
+    && rm -f \
+        /etc/angie/koi-utf \
+        /etc/angie/koi-win \
+        /etc/angie/win-utf \
 # forward request and error logs to docker log collector
     && ln -sf /dev/stdout /var/log/angie/access.log \
     && ln -sf /dev/stderr /var/log/angie/error.log \
@@ -150,9 +157,6 @@ RUN set -ex \
     && apk add --no-cache --virtual .rundeps $rundeps \
     && apk del --no-network .build-deps \
     && rm -rf /var/cache/apk/* /tmp/*
-
-# Add additional binaries into PATH for convenience.
-ENV PATH=$PATH:/usr/local/angie/luajit/bin
 
 # Copy nginx configuration files.
 # https://github.com/nginx/pkg-oss/blob/master/alpine/alpine
