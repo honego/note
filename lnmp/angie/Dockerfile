@@ -118,6 +118,11 @@ RUN set -ex \
     && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$NGX_GEOIP2_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$HEADERS_MORE_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/facebook/zstd/releases/download/v$NGX_ZSTD_VERSION/zstd-$NGX_ZSTD_VERSION.tar.gz | tar fxz - \
+    && make -j$(nproc) -C zstd-$NGX_ZSTD_VERSION/lib \
+# https://github.com/facebook/zstd/blob/dev/lib/libzstd.mk
+        MOREFLAGS="-fPIC" libzstd.a \
+    && export ZSTD_INC="/tmp/zstd-$NGX_ZSTD_VERSION/lib" \
+    && export ZSTD_LIB="/tmp/zstd-$NGX_ZSTD_VERSION/lib" \
     && git clone --depth=10 https://github.com/tokers/zstd-nginx-module.git \
 # run build.
     && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz - \
