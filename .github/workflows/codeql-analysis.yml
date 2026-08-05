@@ -2,10 +2,10 @@
 name: "Codeql analysis"
 
 on:
-  push:
-    branches: ["*"]
-  pull_request:
-    branches: ["*"]
+  # push:
+  #   branches: ["*"]
+  # pull_request:
+  #   branches: ["*"]
   schedule:
     - cron: "0 16 * * *"
   workflow_dispatch:
