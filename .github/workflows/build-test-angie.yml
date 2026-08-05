@@ -47,3 +47,5 @@ jobs:
             --progress=plain \
             --platform ${{ matrix.platform }} \
             --tag $GITHUB_REPOSITORY_OWNER/angie:dev . 2>&1 | tee build.log
+          docker run --rm --entrypoint angie $GITHUB_REPOSITORY_OWNER/angie:dev -qt
+          docker run --rm --entrypoint angie $GITHUB_REPOSITORY_OWNER/angie:dev -V
