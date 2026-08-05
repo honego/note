@@ -84,10 +84,9 @@ ARG RESTY_OPENSSL_BUILD_OPTIONS="\
 ARG RESTY_PCRE_VERSION="10.47"
 ARG RESTY_PCRE_BASE_URL="https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$RESTY_PCRE_VERSION"
 ARG RESTY_PCRE_BUILD_OPTIONS="\
-    --disable-bsr-anycrlf --disable-coverage --disable-ebcdic --disable-fuzz-support --disable-jit-sealloc --disable-never-backslash-C \
-    --disable-pcre2grep-libbz2 --disable-pcre2grep-libz --disable-pcre2test-libedit --disable-rebuild-chartables --disable-silent-rules --disable-static \
-    --disable-valgrind --enable-jit --enable-newline-is-lf --enable-pcre2-8 --enable-pcre2-16 --enable-pcre2-32 --enable-pcre2grep-callout \
-    --enable-pcre2grep-callout-fork --enable-pcre2grep-jit --enable-percent-zt --enable-shared --enable-unicode \
+    --disable-bsr-anycrlf --disable-coverage --disable-ebcdic --disable-fuzz-support --disable-jit-sealloc --disable-never-backslash-C --disable-pcre2grep-libbz2 --disable-pcre2grep-libz \
+    --disable-pcre2test-libedit --disable-rebuild-chartables --disable-silent-rules --disable-static --disable-valgrind --enable-jit --enable-newline-is-lf --enable-pcre2-8 --enable-pcre2-16 \
+    --enable-pcre2-32 --enable-pcre2grep-callout --enable-pcre2grep-callout-fork --enable-pcre2grep-jit --enable-percent-zt --enable-shared --enable-unicode \
     "
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty/APKBUILD
