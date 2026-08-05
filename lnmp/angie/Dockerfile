@@ -14,22 +14,22 @@ FROM base AS dist
 
 LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
-ENV ANGIE_VERSION $ANGIE_VERSION
+ENV ANGIE_VERSION=$ANGIE_VERSION
 
 ## angie modules
 # https://cn.angie.software/angie/docs/installation/external-modules
 
 # https://github.com/leev/ngx_http_geoip2_module
 ARG NGX_GEOIP2_VERSION=3.4
-ENV NGX_GEOIP2_VERSION $NGX_GEOIP2_VERSION
+ENV NGX_GEOIP2_VERSION=$NGX_GEOIP2_VERSION
 
 # https://github.com/openresty/headers-more-nginx-module
 ARG HEADERS_MORE_VERSION=0.40
-ENV HEADERS_MORE_VERSION $HEADERS_MORE_VERSION
+ENV HEADERS_MORE_VERSION=$HEADERS_MORE_VERSION
 
 # https://github.com/facebook/zstd
 ARG NGX_ZSTD_VERSION=1.5.7
-ENV NGX_ZSTD_VERSION $NGX_ZSTD_VERSION
+ENV NGX_ZSTD_VERSION=$NGX_ZSTD_VERSION
 
 ## Build arguments.
 ARG ANGIE_BUILD_OPTIONS="\

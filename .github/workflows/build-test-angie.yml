@@ -25,13 +25,13 @@ env:
 
 jobs:
   build:
-    name: "Build test angie"
+    name: "Build ${{ matrix.arch }}"
     strategy:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-24.04, platform: linux/amd64 }
-          - { os: ubuntu-24.04-arm, platform: linux/arm64 }
+          - { os: ubuntu-24.04, platform: linux/amd64, arch: amd64 }
+          - { os: ubuntu-24.04-arm, platform: linux/arm64, arch: arm64 }
     runs-on: ${{ matrix.os }}
 
     steps:
