@@ -116,7 +116,7 @@ RUN set -ex \
     && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$NGX_GEOIP2_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$HEADERS_MORE_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/facebook/zstd/releases/download/v$NGX_ZSTD_VERSION/zstd-$NGX_ZSTD_VERSION.tar.gz | tar fxz - \
-    && make -j$(nproc) -C zstd-$NGX_ZSTD_VERSION/lib \
+    && make -j$(getconf _NPROCESSORS_ONLN) -C zstd-$NGX_ZSTD_VERSION/lib \
 # https://github.com/facebook/zstd/blob/dev/lib/libzstd.mk
         MOREFLAGS="-fPIC" libzstd.a \
     && export ZSTD_INC="/tmp/zstd-$NGX_ZSTD_VERSION/lib" \
@@ -126,8 +126,8 @@ RUN set -ex \
     && curl -fsSL https://github.com/webserver-llc/angie/archive/Angie-$ANGIE_VERSION.tar.gz | tar xz --strip-components=1 --one-top-level="angie-$ANGIE_VERSION" \
     && cd angie-$ANGIE_VERSION \
     && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_ADD_BUILD_OPTIONS \
-    && make -j$(nproc) \
-    && make -j$(nproc) install \
+    && make -j$(getconf _NPROCESSORS_ONLN) \
+    && make -j$(getconf _NPROCESSORS_ONLN) install \
 # https://github.com/nginx/pkg-oss/blob/master/alpine/alpine/APKBUILD-base.in
     && mkdir -p \
         /var/cache/angie \
