@@ -215,13 +215,14 @@ RUN set -ex \
     && CFLAGS="-g -O3" make -j$(getconf _NPROCESSORS_ONLN) \
     && CFLAGS="-g -O3" make install \
 ##############################
+# Build openresty.
     && cd /tmp \
-    && curl -Ls https://openresty.org/download/openresty-${RESTY_VERSION}.tar.gz -o openresty-${RESTY_VERSION}.tar.gz \
-    && tar fxz openresty-${RESTY_VERSION}.tar.gz \
-    && cd openresty-${RESTY_VERSION} \
+    && curl -fsSL https://openresty.org/download/openresty-$RESTY_VERSION.tar.gz | tar fxz - \
+    && cd openresty-$RESTY_VERSION \
     && eval ./configure -j$(getconf _NPROCESSORS_ONLN) ${RESTY_CONFIG_DEPS} ${RESTY_CONFIG_OPTIONS} ${RESTY_CONFIG_OPTIONS_MORE} ${RESTY_LUAJIT_OPTIONS} ${RESTY_PCRE_OPTIONS} \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make -j$(getconf _NPROCESSORS_ONLN) install \
+##############################
     && if [ -n "${RESTY_STRIP_BINARIES}" ]; then \
         rm -Rf /usr/local/openresty/openssl3/bin/c_rehash /usr/local/openresty/openssl3/lib/*.a /usr/local/openresty/openssl3/include \
         && find /usr/local/openresty/openssl3 -type f -perm -u+x -exec strip --strip-unneeded '{}' \; \
