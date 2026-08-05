@@ -131,9 +131,17 @@ ENV RESTY_LUA_LOCK_VERSION=$RESTY_LUA_LOCK_VERSION
 ARG RESTY_LUA_BALANCER_VERSION="0.05"
 ENV RESTY_LUA_BALANCER_VERSION=$RESTY_LUA_BALANCER_VERSION
 
+# https://github.com/openresty/set-misc-nginx-module
+ARG RESTY_SET_MISC_VERSION="0.34"
+ENV RESTY_SET_MISC_VERSION=$RESTY_SET_MISC_VERSION
+
 # https://github.com/openresty/lua-nginx-module
 ARG RESTY_LUA_VERSION="0.10.32rc3"
 ENV RESTY_LUA_VERSION=$RESTY_LUA_VERSION
+
+# https://github.com/openresty/lua-upstream-nginx-module
+ARG RESTY_LUA_UPSTREAM_VERSION="0.07"
+ENV RESTY_LUA_UPSTREAM_VERSION=$RESTY_LUA_UPSTREAM_VERSION
 
 # https://github.com/openresty/headers-more-nginx-module
 ARG RESTY_HEADERS_MORE_VERSION="0.40"
@@ -227,7 +235,9 @@ ARG ANGIE_BUILD_DEPS="\
 
 ARG ANGIE_ADD_BUILD_OPTIONS="\
     --add-module=../ngx_devel_kit-$NGX_DEVEL_KIT_VERSION \
+    --add-module=../set-misc-nginx-module-$RESTY_SET_MISC_VERSION \
     --add-module=../lua-nginx-module-$RESTY_LUA_VERSION \
+    --add-module=../lua-upstream-nginx-module-$RESTY_LUA_UPSTREAM_VERSION \
     --add-module=../headers-more-nginx-module-$RESTY_HEADERS_MORE_VERSION \
     --add-module=../stream-lua-nginx-module-$RESTY_LUA_STREAM_VERSION \
     "
@@ -304,7 +314,9 @@ RUN set -ex \
     && cd /tmp \
 # install openresty modules.
     && curl -fsSL https://github.com/openresty/ngx_devel_kit/archive/v$NGX_DEVEL_KIT_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/set-misc-nginx-module/archive/v$RESTY_SET_MISC_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/lua-nginx-module/archive/v$RESTY_LUA_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/openresty/lua-upstream-nginx-module/archive/v$RESTY_LUA_UPSTREAM_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$RESTY_HEADERS_MORE_VERSION.tar.gz | tar fxz - \
     && curl -fsSL https://github.com/openresty/stream-lua-nginx-module/archive/v$RESTY_LUA_STREAM_VERSION.tar.gz | tar fxz - \
 # run build.
