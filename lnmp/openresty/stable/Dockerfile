@@ -168,6 +168,7 @@ RUN set -ex \
     && addgroup -g 101 -S nginx \
     && adduser -S -D -H -u 101 -h /var/cache/openresty -s /sbin/nologin -G nginx -g nginx nginx \
     && apk add --no-cache --virtual .build-deps \
+        bash \
         build-base \
         linux-headers \
         perl-dev \
