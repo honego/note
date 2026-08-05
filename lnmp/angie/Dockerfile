@@ -140,28 +140,14 @@ RUN set -ex \
     && ln -sf /dev/stderr /var/log/angie/error.log \
 # create a docker-entrypoint.d directory
     && mkdir /docker-entrypoint.d \
-    && runDeps="$( \
+    && rundeps="$( \
         scanelf --needed --nobanner --format '%n#p' \
             /usr/sbin/angie \
-            /usr/lib/angie/modules/*.so \
-            /usr/local/angie/luajit/bin/* \
-            $(find "$RESTY_LUALIB_PATH" -type f -name '*.so' -print) \
         | tr ',' '\n' \
         | sort -u \
-        | while read -r so; do \
-            [ -z "$so" ] && continue; \
-            for libdir in \
-                /usr/local/angie/openssl3/lib \
-                /usr/local/angie/pcre2/lib \
-                /usr/local/angie/luajit/lib \
-                /usr/local/lib \
-            ; do \
-                [ -e "$libdir/$so" ] && continue 2; \
-            done; \
-            echo "so:$so"; \
-        done \
+        | sed '/^$/d; s/^/so:/' \
     )" \
-    && apk add --no-cache --virtual .runDeps $runDeps \
+    && apk add --no-cache --virtual .rundeps $rundeps \
     && apk del --no-network .build-deps \
     && rm -rf /var/cache/apk/* /tmp/*
 
