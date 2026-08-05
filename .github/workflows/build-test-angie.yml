@@ -3,7 +3,6 @@ name: "Build test angie"
 
 on:
   push:
-    branches: "**"
     paths:
       - "lnmp/angie/**"
       - "!lnmp/angie/**/*.md"
@@ -39,13 +38,29 @@ jobs:
         uses: actions/checkout@v7
 
       - name: "Configure and build angie"
+        env:
+          GH_TOKEN: ${{ github.token }}
         working-directory: ${{ env.WORK_DIR }}
         run: |
-          set -eEuxo pipefail
+          set -euxo pipefail
+
+          ANGIE_VERSION=$(gh api --paginate repos/webserver-llc/angie/tags --jq '.[].name' | sed -n 's/^Angie-//p' | sort -V | tail -n 1)
+          NGX_GEOIP2_VERSION=$(gh api --paginate repos/leev/ngx_http_geoip2_module/tags --jq '.[].name' | sort -V | tail -n 1)
+          HEADERS_MORE_VERSION=$(gh api --paginate repos/openresty/headers-more-nginx-module/tags --jq '.[].name | sub("^v"; "")' | sort -V | tail -n 1)
+          NGX_ZSTD_VERSION=$(gh api repos/facebook/zstd/releases/latest --jq '.tag_name | sub("^v"; "")')
+
           docker build \
             --no-cache \
             --progress=plain \
             --platform ${{ matrix.platform }} \
-            --tag $GITHUB_REPOSITORY_OWNER/angie:dev . 2>&1 | tee build.log
-          docker run --rm --entrypoint angie $GITHUB_REPOSITORY_OWNER/angie:dev -qt
-          docker run --rm --entrypoint angie $GITHUB_REPOSITORY_OWNER/angie:dev -V
+            --build-arg ANGIE_VERSION=$ANGIE_VERSION \
+            --build-arg NGX_GEOIP2_VERSION=$NGX_GEOIP2_VERSION \
+            --build-arg HEADERS_MORE_VERSION=$HEADERS_MORE_VERSION \
+            --build-arg NGX_ZSTD_VERSION=$NGX_ZSTD_VERSION \
+            --tag $GITHUB_REPOSITORY_OWNER/angie:$ANGIE_VERSION-${{ matrix.arch }} \
+            . 2>&1 | tee build.log
+
+          docker run --rm \
+            --entrypoint angie \
+            $GITHUB_REPOSITORY_OWNER/angie:$ANGIE_VERSION-${{ matrix.arch }} \
+            -V

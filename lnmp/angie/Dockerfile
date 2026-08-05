@@ -12,28 +12,26 @@ FROM base AS dist
 LABEL org.opencontainers.image.authors="honeok <i@honeok.com>"
 
 ## angie
-ARG ANGIE_VERSION=1.12.1
+ARG ANGIE_VERSION=
 ENV ANGIE_VERSION=$ANGIE_VERSION
 
 ## angie modules
 # https://cn.angie.software/angie/docs/installation/external-modules
 
 # https://github.com/leev/ngx_http_geoip2_module
-ARG NGX_GEOIP2_VERSION=3.4
+ARG NGX_GEOIP2_VERSION=
 ENV NGX_GEOIP2_VERSION=$NGX_GEOIP2_VERSION
 
 # https://github.com/openresty/headers-more-nginx-module
-ARG HEADERS_MORE_VERSION=0.40
+ARG HEADERS_MORE_VERSION=
 ENV HEADERS_MORE_VERSION=$HEADERS_MORE_VERSION
 
 # https://github.com/facebook/zstd
-ARG NGX_ZSTD_VERSION=1.5.7
+ARG NGX_ZSTD_VERSION=
 ENV NGX_ZSTD_VERSION=$NGX_ZSTD_VERSION
 
 ## Build arguments.
 ARG ANGIE_BUILD_OPTIONS="\
-    --user=angie \
-    --group=angie \
     --prefix=/etc/angie \
     --sbin-path=/usr/sbin/angie \
     --modules-path=/usr/lib/angie/modules \
@@ -41,41 +39,43 @@ ARG ANGIE_BUILD_OPTIONS="\
     --error-log-path=/var/log/angie/error.log \
     --pid-path=/run/angie.pid \
     --lock-path=/run/angie.lock \
-    --http-acme-client-path=/var/lib/angie/acme \
+    --user=angie \
+    --group=angie \
+    --without-select_module \
+    --without-poll_module \
+    --with-threads \
+    --with-file-aio \
+    --with-http_ssl_module \
+    --with-http_v2_module \
+    --with-http_v3_module \
+    --with-http_realip_module \
+    --with-http_addition_module \
+    --with-http_sub_module \
+    --with-http_dav_module \
+    --with-http_flv_module \
+    --with-http_mp4_module \
+    --with-http_gunzip_module \
+    --with-http_gzip_static_module \
+    --with-http_auth_request_module \
+    --with-http_random_index_module \
+    --with-http_secure_link_module \
+    --with-http_slice_module \
+    --with-http_stub_status_module \
+    --with-http_acme_module \
     --http-log-path=/var/log/angie/access.log \
     --http-client-body-temp-path=/var/cache/angie/client_temp \
     --http-proxy-temp-path=/var/cache/angie/proxy_temp \
     --http-fastcgi-temp-path=/var/cache/angie/fastcgi_temp \
     --http-uwsgi-temp-path=/var/cache/angie/uwsgi_temp \
     --http-scgi-temp-path=/var/cache/angie/scgi_temp \
-    --without-select_module \
-    --without-poll_module \
-    --with-threads \
-    --with-file-aio \
-    --with-http_acme_module \
-    --with-http_addition_module \
-    --with-http_auth_request_module \
-    --with-http_dav_module \
-    --with-http_flv_module \
-    --with-http_gunzip_module \
-    --with-http_gzip_static_module \
-    --with-http_mp4_module \
-    --with-http_random_index_module \
-    --with-http_realip_module \
-    --with-http_secure_link_module \
-    --with-http_slice_module \
-    --with-http_ssl_module \
-    --with-http_stub_status_module \
-    --with-http_sub_module \
-    --with-http_v2_module \
-    --with-http_v3_module \
+    --http-acme-client-path=/var/lib/angie/acme \
     --with-stream \
+    --with-stream_ssl_module \
     --with-stream_acme_module \
+    --with-stream_realip_module \
+    --with-stream_ssl_preread_module \
     --with-stream_mqtt_preread_module \
     --with-stream_rdp_preread_module \
-    --with-stream_realip_module \
-    --with-stream_ssl_module \
-    --with-stream_ssl_preread_module \
     "
 
 ARG ANGIE_BUILD_DEPS="\
@@ -113,9 +113,9 @@ RUN set -ex \
     && cd /tmp \
 # install third-party modules.
     && git clone --recurse-submodules -j8 https://github.com/google/ngx_brotli \
-    && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$NGX_GEOIP2_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$HEADERS_MORE_VERSION.tar.gz | tar fxz - \
-    && curl -fsSL https://github.com/facebook/zstd/releases/download/v$NGX_ZSTD_VERSION/zstd-$NGX_ZSTD_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/leev/ngx_http_geoip2_module/archive/$NGX_GEOIP2_VERSION.tar.gz | tar xz - \
+    && curl -fsSL https://github.com/openresty/headers-more-nginx-module/archive/v$HEADERS_MORE_VERSION.tar.gz | tar xz - \
+    && curl -fsSL https://github.com/facebook/zstd/releases/download/v$NGX_ZSTD_VERSION/zstd-$NGX_ZSTD_VERSION.tar.gz | tar xz - \
     && make -j$(nproc) -C zstd-$NGX_ZSTD_VERSION/lib \
 # https://github.com/facebook/zstd/blob/dev/lib/libzstd.mk
         MOREFLAGS="-fPIC" libzstd.a \
@@ -123,7 +123,7 @@ RUN set -ex \
     && export ZSTD_LIB="/tmp/zstd-$NGX_ZSTD_VERSION/lib" \
     && git clone --depth=10 https://github.com/tokers/zstd-nginx-module.git \
 # run build.
-    && curl -fsSL https://download.angie.software/files/angie-$ANGIE_VERSION.tar.gz | tar fxz - \
+    && curl -fsSL https://github.com/webserver-llc/angie/archive/Angie-$ANGIE_VERSION.tar.gz | tar xz --strip-components=1 --one-top-level="angie-$ANGIE_VERSION" \
     && cd angie-$ANGIE_VERSION \
     && eval ./configure $ANGIE_BUILD_OPTIONS $ANGIE_BUILD_DEPS $ANGIE_ADD_BUILD_OPTIONS \
     && make -j$(nproc) \
