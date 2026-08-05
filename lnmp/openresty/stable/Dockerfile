@@ -34,7 +34,7 @@ ARG RESTY_PCRE_BUILD_OPTIONS="\
 
 # https://github.com/openresty/openresty-packaging/blob/master/alpine/openresty/APKBUILD
 ARG RESTY_CONFIG_OPTIONS="\
-# options directly inherited from nginx.
+    `# options directly inherited from nginx.` \
     --prefix=/usr/local/openresty \
     --sbin-path=/usr/sbin/openresty \
     --modules-path=/usr/lib/openresty/modules \
@@ -74,7 +74,7 @@ ARG RESTY_CONFIG_OPTIONS="\
     --with-stream_ssl_module \
     --with-stream_realip_module \
     --with-stream_ssl_preread_module \
-# openresty specific options.
+    `# openresty specific options.` \
     --without-http_rds_json_module \
     --without-http_rds_csv_module \
     --without-lua_rds_parser \
