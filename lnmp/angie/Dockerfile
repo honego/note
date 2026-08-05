@@ -137,7 +137,7 @@ RUN set -ex \
     && mv /etc/angie/html /usr/share/angie \
     && ln -sf /usr/lib/angie/modules /etc/angie/modules \
     && ln -sf /usr/sbin/angie /usr/sbin/nginx \
-    && rm -rf ./etc/nginx/*.default \
+    && rm -rf /etc/angie/*.default \
     && rm -f \
         /etc/angie/koi-utf \
         /etc/angie/koi-win \
