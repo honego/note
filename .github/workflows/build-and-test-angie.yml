@@ -1,0 +1,50 @@
+---
+name: "Build test angie"
+
+on:
+  push:
+    branches: "**"
+    paths:
+      - "lnmp/angie/**"
+      - "!lnmp/angie/**/*.md"
+  pull_request:
+    paths:
+      - "lnmp/angie/**"
+      - "!lnmp/angie/**/*.md"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  WORK_DIR: lnmp/angie
+
+jobs:
+  build:
+    name: "Build test angie"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, platform: linux/amd64, arch: amd64 }
+          - { os: ubuntu-24.04-arm, platform: linux/arm64, arch: arm64 }
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v7
+
+      - name: "Build test angie"
+        working-directory: ${{ env.WORK_DIR }}
+        run: |
+          set -eEuxo pipefail
+          docker build \
+            --no-cache \
+            --progress=plain \
+            --platform ${{ matrix.platform }} \
+            --build-arg ANGIE_STRIP_BINARIES=1 \
+            --tag $GITHUB_REPOSITORY_OWNER/angie:dev . 2>&1 | tee build.log
