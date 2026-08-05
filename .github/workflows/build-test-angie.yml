@@ -30,15 +30,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-24.04, platform: linux/amd64, arch: amd64 }
-          - { os: ubuntu-24.04-arm, platform: linux/arm64, arch: arm64 }
+          - { os: ubuntu-24.04, platform: linux/amd64 }
+          - { os: ubuntu-24.04-arm, platform: linux/arm64 }
     runs-on: ${{ matrix.os }}
 
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@v7
 
-      - name: "Build test angie"
+      - name: "Configure and build angie"
         working-directory: ${{ env.WORK_DIR }}
         run: |
           set -eEuxo pipefail
@@ -46,5 +46,4 @@ jobs:
             --no-cache \
             --progress=plain \
             --platform ${{ matrix.platform }} \
-            --build-arg ANGIE_STRIP_BINARIES=1 \
             --tag $GITHUB_REPOSITORY_OWNER/angie:dev . 2>&1 | tee build.log

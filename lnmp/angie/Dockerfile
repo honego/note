@@ -92,9 +92,6 @@ ARG ANGIE_ADD_BUILD_OPTIONS="\
     --add-module=../zstd-nginx-module \
     "
 
-# strip binaries.
-ARG ANGIE_STRIP_BINARIES=""
-
 RUN set -ex \
     && addgroup -g 101 -S angie \
     && adduser -S -D -H -u 101 -h /var/cache/angie -s /sbin/nologin -G angie -g angie angie \
