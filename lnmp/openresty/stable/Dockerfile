@@ -253,7 +253,7 @@ RUN set -ex \
 ENV PATH=$PATH:/usr/local/openresty/bin:/usr/local/openresty/luajit/bin
 
 # Copy nginx configuration files.
-COPY nginx.conf /usr/local/openresty/nginx/conf/nginx.conf
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
 
 COPY --chmod=755 docker-entrypoint.sh /
