@@ -11,3 +11,5 @@
 *.zip binary
 
 *.svg text eol=lf
+
+webserver/**/*.conf linguist-language=Nginx
