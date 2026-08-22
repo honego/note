@@ -47,8 +47,13 @@ local sensitive_path_pattern = [[
   (?:[;/]|$)
 ]]
 
--- 拦截原始请求中的路径穿越
-local raw_traversal_pattern = [[(?:\.\.|%2e%2e|%252e%252e)(?:/|\\|%2f|%5c|%252f|%255c)]]
+-- 从路径段或查询参数值边界开始 每个点和分隔符都可独立使用原始
+-- 单层编码或双层编码形式 例如 ../ .%2e/ %2e./ .%252e/ %252e./
+local raw_traversal_pattern = [[
+  (?: ^ | / | \\ | [?&=;] | %2f | %5c | %252f | %255c )
+  (?: \. | %2e | %252e ){2}
+  (?: / | \\ | %2f | %5c | %252f | %255c )
+]]
 
 return function()
   -- raw_request_uri 保留原始请求用于拦截编码路径穿越
@@ -58,7 +63,7 @@ return function()
 
   -- 拦截 ../ ..\ 及其 URL 编码变体
   local raw_traversal_from, _raw_traversal_to, raw_traversal_err =
-    regex_find(raw_request_uri, raw_traversal_pattern, "ijo")
+    regex_find(raw_request_uri, raw_traversal_pattern, "ijox")
 
   if raw_traversal_err then
     log(ngx.ERR, "failed to evaluate raw traversal pattern: ", raw_traversal_err)
