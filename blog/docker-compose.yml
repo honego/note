@@ -32,9 +32,9 @@ services:
     user: 1001:1001
     environment:
       # TZ: Asia/Shanghai
-      MYSQL_ROOT_PASSWORD: 8aDdVzUzXwjEAOhifFW6yg # openssl rand -base64 16
-      MYSQL_USER: honeok
-      MYSQL_PASSWORD: 4siz2vOewdLbww # openssl rand -base64 10
+      MYSQL_ROOT_PASSWORD: # openssl rand -base64 16
+      MYSQL_USER: nmsl
+      MYSQL_PASSWORD: # openssl rand -base64 10
     volumes:
       - /usr/share/zoneinfo/Asia/Shanghai:/etc/localtime:ro
       - $PWD/mysql/my.cnf:/etc/my.cnf
