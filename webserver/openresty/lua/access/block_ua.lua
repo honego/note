@@ -60,41 +60,6 @@ local function regex_found(pattern, user_agent)
   return from ~= nil
 end
 
--- 本地监控和指定 AI UA 固定放行 避免被后续 UA 规则误伤
-local allowed_ua_pattern = [[
-  (?:
-    ^ Uptime-Kuma (?: / [A-Za-z0-9._+-]+ )? $
-
-    | (?: ^ | [^A-Za-z0-9] )
-      (?:
-        GPTBot
-        | OAI-SearchBot
-        | OAI-AdsBot
-        | ChatGPT-User
-        | ClaudeBot
-        | Claude-User
-        | Claude-SearchBot
-        | anthropic-ai
-        | PerplexityBot
-        | Perplexity-User
-        | Applebot-Extended
-        | GoogleOther
-        | Google-CloudVertexBot
-        | Bytespider
-        | CCBot
-        | Diffbot
-        | omgilibot
-        | YouBot
-        | Meta-ExternalAgent
-        | meta-externalagent
-        | meta-externalfetcher
-        | cohere-ai
-        | AI2Bot
-      )
-      (?: / | [^A-Za-z0-9] | $ )
-  )
-]]
-
 -- 拦截特征明确的 UA
 local deny_rules = {
   {
@@ -205,17 +170,13 @@ return function()
     return reject("empty_user_agent", user_agent)
   end
 
-  -- 异常超长 UA 没有正常业务价值 避免日志污染和规则绕过
+  -- 异常超长 UA 没有正常业务价值 避免异常输入和规则绕过
   if strlen(user_agent) > 512 then
     return reject("oversized_user_agent", user_agent)
   end
 
   if regex_found([[ ^ \s* $ ]], user_agent) then
     return reject("empty_user_agent", user_agent)
-  end
-
-  if regex_found(allowed_ua_pattern, user_agent) then
-    return
   end
 
   for i = 1, #deny_rules do
