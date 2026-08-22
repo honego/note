@@ -1,6 +1,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
--- Description: The lua file cheaply rejects HTTP methods whose first byte is not an uppercase ASCII letter.
+-- Description: The Lua module cheaply rejects HTTP methods whose first byte is not an uppercase ASCII letter.
 -- Copyright (c) 2026 honeok <i@honeok.com>
 
 local ngx = ngx
