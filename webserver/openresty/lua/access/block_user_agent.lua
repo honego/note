@@ -1,6 +1,6 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
--- Description: The lua file is used to block obvious malicious User-Agent requests in OpenResty.
+-- Description: The Lua module blocks obvious malicious User-Agent requests in OpenResty.
 -- Copyright (c) 2026 honeok <i@honeok.com>
 
 local ngx = ngx
