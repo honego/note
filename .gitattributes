@@ -12,4 +12,5 @@
 
 *.svg text eol=lf
 
+blog/nginx/**/*.conf linguist-language=Nginx
 webserver/**/*.conf linguist-language=Nginx
