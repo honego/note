@@ -43,7 +43,7 @@ jobs:
           )
           VERSION="$(skopeo list-tags "docker://$REGISTRY_IMAGE" | jq -r '.Tags[]? | select(test("^v?[0-9]+(?:\\.[0-9]+)*"))' | sort -V | tail -n 1)"
           for u in "${!USERNAMES[@]}"; do
-            docker login -u "${USERNAMES[$u]}" --password-stdin <<< "$DOCKER_PASSWORD" 2> /dev/null
+            docker login --username "${USERNAMES[$u]}" --password-stdin <<< "$DOCKER_PASSWORD" 2> /dev/null
             for ((i = 1; i <= 50; i++)); do
               docker pull "$REGISTRY_IMAGE":"$VERSION"
               docker rmi --force "$REGISTRY_IMAGE":"$VERSION"
