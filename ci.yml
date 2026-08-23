@@ -84,11 +84,16 @@ jobs:
       - name: "Bump execution time"
         run: |
           END_TIME="$(date '+%Y-%m-%d %H:%M:%S')"
-          sed -i "s/\(pull time:\).*/\1 $END_TIME/" ./README.md
-          echo "END_TIME=$END_TIME" >> "$GITHUB_ENV"
           echo "task complete in $END_TIME"
+          sed -i "s#\(pull time:\).*#\1 $END_TIME#" README.md
+          echo "END_TIME=$END_TIME" >> "$GITHUB_ENV"
+
+      - name: "Verify changed files"
+        id: changed
+        uses: tj-actions/verify-changed-files@v20
 
       - name: "Upload commit to repository"
+        if: steps.changed.outputs.files_changed == 'true'
         uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "docs: pull time ${{ env.END_TIME }} by github actions"
