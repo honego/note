@@ -1,0 +1,98 @@
+---
+name: "CI"
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  pull:
+    name: "Pull docker image"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Pulling images in loop"
+        env:
+          USERNAME_1: ${{ secrets.USERNAME_1 }}
+          USERNAME_2: ${{ secrets.USERNAME_2 }}
+          USERNAME_3: ${{ secrets.USERNAME_3 }}
+          USERNAME_4: ${{ secrets.USERNAME_4 }}
+          USERNAME_5: ${{ secrets.USERNAME_5 }}
+          REGISTRY_IMAGE: ${{ secrets.REGISTRY_IMAGE }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          set -eEuo pipefail
+
+          USERNAMES=(
+            "$USERNAME_1"
+            "$USERNAME_2"
+            "$USERNAME_3"
+            "$USERNAME_4"
+            "$USERNAME_5"
+          )
+          VERSION="$(skopeo list-tags "docker://$REGISTRY_IMAGE" | jq -r '.Tags[]? | select(test("^v?[0-9]+(?:\\.[0-9]+)*"))' | sort -V | tail -n 1)"
+          for u in "${!USERNAMES[@]}"; do
+            docker login -u "${USERNAMES[$u]}" --password-stdin <<< "$DOCKER_PASSWORD" 2> /dev/null
+            for ((i = 1; i <= 50; i++)); do
+              docker pull "$REGISTRY_IMAGE":"$VERSION"
+              docker rmi --force "$REGISTRY_IMAGE":"$VERSION"
+            done
+            docker logout > /dev/null 2>&1
+          done
+
+  delete:
+    name: "Delete workflows"
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    needs: [pull]
+
+    steps:
+      - name: "Delete workflows"
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 0
+          keep_minimum_runs: 0
+          delete_run_by_conclusion_pattern: "ALL"
+
+  mark:
+    name: "Mark pull time"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs: [delete]
+
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: "Bump execution time"
+        run: |
+          END_TIME="$(date '+%Y-%m-%d %H:%M:%S')"
+          sed -i "s/\(pull time:\).*/\1 $END_TIME/" ./README.md
+          echo "END_TIME=$END_TIME" >> "$GITHUB_ENV"
+          echo "task complete in $END_TIME"
+
+      - name: "Upload commit to repository"
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "docs: pull time ${{ env.END_TIME }} by github actions"
+          commit_options: "--signoff --no-verify"
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_author: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
