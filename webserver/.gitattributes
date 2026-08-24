@@ -1,1 +1,2 @@
-*.conf linguist-language=Nginx
+nginx/** linguist-language=Nginx
+openresty/** linguist-language=Nginx
