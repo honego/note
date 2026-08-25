@@ -1,0 +1,26 @@
+    # 启用异步文件 I/O, 默认值 off, 主要用于本地大文件下载、视频、镜像站, 普通网站/API/反代通常不需要
+    # aio on 需配合 directio 且会绕过页缓存, 现代 Linux 大文件场景更建议局部使用 aio threads, 但需编译 --with-threads
+    aio off;
+
+    # 是否将 AIO 用于写入代理临时文件, 默认 off, 仅在 aio threads 下生效
+    # 用于上游响应很大或客户端很慢、Nginx 需要把响应暂存到磁盘的场景, 普通站点一般关闭
+    aio_write  off;
+
+    # 延迟未授权请求的 401 响应, 默认 0s; 用于 auth_basic、auth_request 子请求、JWT 等鉴权场景, 降低基于响应时间猜测账号/密码/token 的风险
+    # 这不是限速/防爆破模块, 普通站点可保持默认; 登录、后台、API 鉴权入口可按需设 1s 左右
+    auth_delay  0s;
+
+
+
+    # 用于对达到指定大小的本地文件启用 Direct I/O, 默认 off, 读取时绕过系统页缓存, 并自动禁用该请求的 sendfile
+    # 主要用于大体积文件下载、视频、镜像包等场景, 避免大文件挤占页缓存; 普通 html/css/js/图片建议保持 off
+    # Linux 下配合传统 aio on 时通常需要 directio, 现代场景更建议只在大文件 location 中按需设置
+    directio  off;
+
+    # 用于设置 directio 的文件读取对齐大小, 默认 512, 仅在启用 directio 时才有意义
+    # 大多数文件系统保持 512 即可, Linux 下使用 XFS 且启用 directio 时通常需要改为 4k
+    directio_alignment  512;
+
+    # 用于控制打开静态文件时是否检查路径中的符号链接, 默认 off, on 会拒绝任何符号链接, if_not_owner 仅拒绝链接与目标文件属主不同的情况
+    # 该检查会增加文件访问开销, 且 autoindex/random_index/dav 模块会忽略此参数, 通用配置保持 off, 多用户站点可按需启用 if_not_owner from=$document_root
+    disable_symlinks  off;
