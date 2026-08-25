@@ -32,3 +32,24 @@
     # 用于设置从磁盘读取响应内容时使用的输出缓冲区, 默认 2 32k, 主要影响 nginx 直接读取本地静态文件的场景
     # 通用配置保持默认即可, 大文件下载、视频、镜像目录配合 aio/directio 时可在具体 location 适当调大
     output_buffers  2 32k;
+
+    # 用于设置子请求响应体保存在内存时的缓冲区大小, 默认 4k/8k, 取决于系统内存页大小
+    # 仅影响 SSI 等会缓存子请求响应体的场景, 通用配置保持默认即可, 子请求响应片段较大时可按需调到 16k
+    subrequest_output_buffer_size  8k;
+
+    # 用于设置 MIME types 哈希表的 bucket 大小, 默认 64, 影响 types 映射表的构建, 不是响应缓冲区
+    # 通用配置保持默认即可, 仅在自定义 types 很多或启动提示 types_hash 相关空间不足时再按提示调大
+    # 与CPU缓存行大小对齐 getconf LEVEL1_DCACHE_LINESIZE
+    types_hash_bucket_size  64;
+
+    # 用于设置 MIME types 哈希表的最大容量, 默认 1024, 影响扩展名到 Content-Type 映射表的构建空间
+    # 通用配置保持默认即可, 仅在自定义 types 很多或启动提示 types_hash 空间不足时再按提示调大, 常见可先试 2048
+    types_hash_max_size  1024;
+
+    # 用于设置 nginx 变量哈希表的 bucket 大小, 默认 64, 影响内置变量和模块变量名的哈希表构建
+    # 通用配置保持默认即可, 仅在变量数量很多或启动提示 variables_hash 相关空间不足时再按提示调大
+    variables_hash_bucket_size  64;
+
+    # 用于设置 nginx 变量哈希表的最大容量, 默认 1024, 影响内置变量、模块变量和自定义变量的哈希表构建空间
+    # 通用配置保持默认即可, 仅在变量数量很多, 或启动提示 variables_hash 空间不足时再按提示调大
+    variables_hash_max_size  1024;
