@@ -24,3 +24,7 @@
     # 用于控制打开静态文件时是否检查路径中的符号链接, 默认 off, on 会拒绝任何符号链接, if_not_owner 仅拒绝链接与目标文件属主不同的情况
     # 该检查会增加文件访问开销, 且 autoindex/random_index/dav 模块会忽略此参数, 通用配置保持 off, 多用户站点可按需启用 if_not_owner from=$document_root
     disable_symlinks  off;
+
+    # 用于限制单个请求允许的请求头行数, 默认 1000, 达到限制时返回 400 Bad Request
+    # 该参数可防止异常客户端发送大量 header 占用解析资源, nginx 1.29.8+ 支持, 通用配置保持默认即可
+    # max_headers  1000;
