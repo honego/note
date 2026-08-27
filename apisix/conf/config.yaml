@@ -18,6 +18,27 @@ apisix:
   #   enable_tcp_pp: true # 是否在所有 TCP stream 监听端口接收 PROXY Protocol
   #   enable_tcp_pp_to_upstream: true # 是否向所有 TCP stream 上游发送 PROXY Protocol
 
+  enable_server_tokens: false # 是否在 Server 响应头中显示 APISIX 版本
+  extra_lua_path: "" # 扩展 Lua 模块搜索路径, 仅加载自定义 Lua 代码时配置
+  extra_lua_cpath: "" # 扩展 Lua C 模块搜索路径, 仅加载自定义动态库时配置
+  # lua_module_hook: "my_project.my_hook" # 加载自定义 Lua Hook 模块, 仅需要修改 APISIX 内部行为时配置
+
+  # 代理缓存配置
+  proxy_cache:
+    cache_ttl: 10s # 上游未指定缓存时间时的默认磁盘缓存 TTL
+    zones:
+      - name: disk_cache # 磁盘缓存区域
+        memory_size: 50m # 缓存索引共享内存大小
+        disk_size: 1G # 磁盘缓存空间上限
+        disk_path: /tmp/disk_cache # 磁盘缓存目录
+        cache_levels: "1:2" # 缓存目录层级
+      - name: memory_cache # 内存缓存区域
+        memory_size: 50m # 内存缓存大小
+
+  delete_uri_tail_slash: false # 是否删除 URI 末尾的 /
+  normalize_uri_like_servlet: false # 是否按 Java Servlet/Tomcat 规则规范化 URI
+  match_uri_encoded_slash: false # 是否在路由匹配时保留 URL 编码的斜杠 %2F
+
   enable_control: true
   control:
     ip: "0.0.0.0"
