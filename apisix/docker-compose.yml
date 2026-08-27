@@ -1,0 +1,18 @@
+# https://github.com/apache/apisix-docker/blob/master/example/docker-compose.yml
+---
+services:
+  apisix:
+    image: apache/apisix:3.18.0-ubuntu
+    container_name: apisix
+    restart: unless-stopped
+    # ports:
+    #   - 9091:9091/tcp
+    #   - 9092:9092/tcp
+    #   - 9080:9080/tcp
+    #   - 9180:9180/tcp
+    #   - 9443:9443/tcp
+    environment:
+      TZ: Asia/Shanghai
+    volumes:
+      - $PWD/conf/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    network_mode: host
