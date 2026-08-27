@@ -1,44 +1,88 @@
 --
 -- SPDX-License-Identifier: Apache-2.0
--- Description: The lua file applies Cache-Control headers by uri extension when upstream does not provide caching headers in OpenResty.
+-- Description: The Lua file applies fallback Cache-Control headers to immutable static assets in OpenResty.
 -- Copyright (c) 2026 honeok <i@honeok.com>
 
 local ngx = ngx
+local var = ngx.var
+local response_headers = ngx.header
 
--- 从 nginx 变量中读取静态资源兜底缓存策略
-local static_cache_control = ngx.var.static_cache_control
+-- 仅处理 GET / HEAD 请求
+local request_method = var.request_method
 
--- 当前 uri 没有匹配静态资源缓存规则 直接跳过
+if request_method ~= "GET" and request_method ~= "HEAD" then
+  return
+end
+
+-- 从 Nginx map 中读取静态资源兜底缓存策略
+local static_cache_control = var.static_cache_control
+
 if static_cache_control == nil or static_cache_control == "" then
   return
 end
 
--- 当前响应状态码
+-- 仅处理正常响应, Range 响应和条件请求响应
 local response_status = ngx.status
 
--- 只处理正常响应和 Range 响应
--- 200: 普通成功响应
--- 206: Range / Partial Content 响应, 常见于媒体 断点请求等
-local is_cacheable_status = response_status == 200 or response_status == 206
-if not is_cacheable_status then
+if response_status ~= 200 and response_status ~= 206 and response_status ~= 304 then
   return
 end
 
--- 当前响应头对象
-local response_headers = ngx.header
+-- 避免将 SPA fallback 或错误页面误判为静态资源
+local content_type = response_headers["Content-Type"]
 
--- 如果上游返回了 Set-Cookie, 说明响应可能和用户状态有关 不补缓存
-local has_set_cookie = response_headers["Set-Cookie"] ~= nil
-if has_set_cookie then
+if
+  type(content_type) == "string"
+  and (content_type:find("text/html", 1, true) == 1 or content_type:find("application/xhtml+xml", 1, true) == 1)
+then
   return
 end
 
--- 如果上游已经返回缓存策略, 尊重上游不覆盖
-local has_cache_control = response_headers["Cache-Control"] ~= nil
-local has_expires = response_headers["Expires"] ~= nil
-if has_cache_control or has_expires then
+-- 尊重上游明确提供的缓存策略
+local upstream_cache_control = var.upstream_http_cache_control
+local upstream_expires = var.upstream_http_expires
+local upstream_x_accel_expires = var.upstream_http_x_accel_expires
+
+if
+  (upstream_cache_control ~= nil and upstream_cache_control ~= "")
+  or (upstream_expires ~= nil and upstream_expires ~= "")
+  or (upstream_x_accel_expires ~= nil and upstream_x_accel_expires ~= "")
+then
   return
 end
 
--- 上游没有缓存策略时, 才由 openresty 补充静态资源缓存头
+-- 尊重其他响应过滤器已经设置的缓存策略
+if response_headers["Cache-Control"] ~= nil or response_headers["Expires"] ~= nil then
+  return
+end
+
+-- 带用户状态的响应不主动声明为公共缓存
+local upstream_set_cookie = var.upstream_http_set_cookie
+
+if response_headers["Set-Cookie"] ~= nil or (upstream_set_cookie ~= nil and upstream_set_cookie ~= "") then
+  return
+end
+
+local authorization = var.http_authorization
+
+if authorization ~= nil and authorization ~= "" then
+  return
+end
+
+-- Vary: * 表示响应不能通过普通变体匹配复用
+local vary = response_headers["Vary"]
+
+if type(vary) == "string" then
+  if vary:find("*", 1, true) then
+    return
+  end
+elseif type(vary) == "table" then
+  for i = 1, #vary do
+    if vary[i]:find("*", 1, true) then
+      return
+    end
+  end
+end
+
+-- 上游未提供缓存策略时, 由 OpenResty 补充客户端缓存策略
 response_headers["Cache-Control"] = static_cache_control
