@@ -16,7 +16,7 @@ local sensitive_path_pattern = [[
     |
     (?:web|meta)-inf
     |
-    [^/]*(?:
+    (?:
       config|settings?|secrets?|credentials?|database
       |service[-_.]?accounts?|access[-_.]?tokens?|private[-_.]?keys?
     )[^/]*\.(?:php|ya?ml|json|xml)
