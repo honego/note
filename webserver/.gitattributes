@@ -1,2 +1,3 @@
+angie/**/*.conf linguist-language=Nginx
 nginx/**/*.conf linguist-language=Nginx
 openresty/**/*.conf linguist-language=Nginx
